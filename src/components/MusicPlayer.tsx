@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, Heart, Plus, Music2, Trash2, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, Heart, Plus, Music2, Trash2, Pencil, Link } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
+import { Badge } from "@/components/ui/badge";
 
 export const MusicPlayer = () => {
   const { 
@@ -33,6 +33,7 @@ export const MusicPlayer = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentEditTrack, setCurrentEditTrack] = useState<{id: string, title: string, artist: string} | null>(null);
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   // Simulate progress bar
   useEffect(() => {
@@ -64,9 +65,26 @@ export const MusicPlayer = () => {
     }
   };
 
-  const handleAddTrack = async () => {
-    if (!inputUrl) return;
+  const validateMusicUrl = (url: string): boolean => {
+    // Check for YouTube Music or Spotify URLs
+    const ytMusicRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch|youtu\.be\/|music\.youtube\.com)/i;
+    const spotifyRegex = /^(https?:\/\/)?(open\.spotify\.com|spotify\.com)/i;
     
+    return ytMusicRegex.test(url) || spotifyRegex.test(url);
+  };
+
+  const handleAddTrack = async () => {
+    if (!inputUrl) {
+      setUrlError("Please enter a URL");
+      return;
+    }
+    
+    if (!validateMusicUrl(inputUrl)) {
+      setUrlError("Please enter a valid YouTube Music or Spotify URL");
+      return;
+    }
+    
+    setUrlError(null);
     await addTrack(inputUrl);
     setInputUrl('');
     setIsAddDialogOpen(false);
@@ -91,6 +109,14 @@ export const MusicPlayer = () => {
       artist: track.artist
     });
     setIsEditDialogOpen(true);
+  };
+
+  const getSourceIcon = (source: 'youtube' | 'spotify') => {
+    return (
+      <Badge variant="outline" className={`text-xs ${source === 'youtube' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+        {source === 'youtube' ? 'YouTube' : 'Spotify'}
+      </Badge>
+    );
   };
 
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
@@ -142,7 +168,10 @@ export const MusicPlayer = () => {
                         style={{ backgroundImage: `url(${track.coverUrl})` }}
                       />
                       <div className="flex-grow min-w-0" onClick={() => playTrack(index)}>
-                        <h3 className="font-medium truncate">{track.title}</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium truncate">{track.title}</h3>
+                          {getSourceIcon(track.source)}
+                        </div>
                         <p className="text-sm text-gray-400 truncate">{track.artist}</p>
                       </div>
                       <div className="flex items-center gap-1">
@@ -191,7 +220,10 @@ export const MusicPlayer = () => {
                     style={{ backgroundImage: `url(${currentTrack.coverUrl})` }}
                   />
                   
-                  <h3 className="font-bold text-xl text-center mb-1">{currentTrack.title}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className="font-bold text-xl text-center">{currentTrack.title}</h3>
+                    {getSourceIcon(currentTrack.source)}
+                  </div>
                   <p className="text-gray-400 text-center mb-6">{currentTrack.artist}</p>
                   
                   <div className="w-full mb-6">
@@ -273,23 +305,55 @@ export const MusicPlayer = () => {
       </div>
 
       {/* Add Track Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+        setIsAddDialogOpen(open);
+        if (!open) {
+          setUrlError(null);
+          setInputUrl('');
+        }
+      }}>
         <DialogContent className="glass-card">
           <DialogHeader>
             <DialogTitle>Add New Track</DialogTitle>
+            <DialogDescription>
+              Paste a YouTube Music or Spotify link to add it to your playlist
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <Input
-              placeholder="Paste YouTube Music or Spotify URL"
-              value={inputUrl}
-              onChange={(e) => setInputUrl(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              Supported formats: YouTube Music and Spotify links
-            </p>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Link size={18} className="text-muted-foreground" />
+              </div>
+              <Input
+                placeholder="Paste YouTube Music or Spotify URL"
+                value={inputUrl}
+                onChange={(e) => setInputUrl(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {urlError && (
+              <p className="text-xs text-destructive">
+                {urlError}
+              </p>
+            )}
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p className="font-medium">Supported formats:</p>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-red-500/10 text-red-500">YouTube</Badge>
+                <span>https://music.youtube.com/watch?v=...</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-green-500/10 text-green-500">Spotify</Badge>
+                <span>https://open.spotify.com/track/...</span>
+              </div>
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => {
+              setIsAddDialogOpen(false);
+              setUrlError(null);
+              setInputUrl('');
+            }}>Cancel</Button>
             <Button onClick={handleAddTrack}>Add Track</Button>
           </DialogFooter>
         </DialogContent>
@@ -300,6 +364,9 @@ export const MusicPlayer = () => {
         <DialogContent className="glass-card">
           <DialogHeader>
             <DialogTitle>Edit Track</DialogTitle>
+            <DialogDescription>
+              Customize the track details
+            </DialogDescription>
           </DialogHeader>
           {currentEditTrack && (
             <div className="space-y-4 py-4">

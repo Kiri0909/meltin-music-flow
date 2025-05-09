@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +33,7 @@ type MusicPlayerContextType = {
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
 
 const generateMockData = (url: string): Partial<Track> => {
+  // Identify the source
   const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
   const isSpotify = url.includes('spotify.com');
   
@@ -41,39 +41,132 @@ const generateMockData = (url: string): Partial<Track> => {
     throw new Error('Only YouTube Music and Spotify links are supported');
   }
   
-  // For demo purposes, we're generating mock metadata
-  // In a real app, this would parse the actual metadata from the services
-  const artists = [
+  // For demo purposes, we're generating mock metadata based on the URL patterns
+  // In a real app, this would parse the actual metadata from the services' APIs
+  
+  // Mock data sets based on source
+  const spotifyArtists = [
     'The Weeknd', 
+    'Dua Lipa', 
+    'Bad Bunny', 
     'Taylor Swift', 
-    'Drake', 
-    'Billie Eilish', 
-    'Post Malone'
+    'Billie Eilish'
   ];
   
-  const titles = [
+  const spotifyTitles = [
     'Blinding Lights', 
-    'Anti-Hero', 
-    'God\'s Plan', 
-    'bad guy', 
-    'Circles'
+    'Don\'t Start Now', 
+    'Dakiti', 
+    'Cardigan', 
+    'everything i wanted'
   ];
   
-  const coverImages = [
+  const spotifyCoverImages = [
     'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36',
-    'https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5',
-    'https://i.scdn.co/image/ab67616d0000b27382b243023b937fd579a35533',
-    'https://i.scdn.co/image/ab67616d0000b273800d7b017410db9263c69a18'
+    'https://i.scdn.co/image/ab67616d0000b273bd26ede1ae69327010d49946',
+    'https://i.scdn.co/image/ab67616d0000b27308fc2c7c9945a5d80258c2c5',
+    'https://i.scdn.co/image/ab67616d0000b273ae461c2d5e42d88389ee7cc8'
   ];
   
-  const randomArtist = artists[Math.floor(Math.random() * artists.length)];
-  const randomTitle = titles[Math.floor(Math.random() * titles.length)];
-  const randomCover = coverImages[Math.floor(Math.random() * coverImages.length)];
+  const youtubeArtists = [
+    'Drake', 
+    'Post Malone', 
+    'Ed Sheeran', 
+    'BTS', 
+    'Ariana Grande'
+  ];
+  
+  const youtubeTitles = [
+    'God\'s Plan', 
+    'Circles', 
+    'Shape of You', 
+    'Dynamite', 
+    '7 rings'
+  ];
+  
+  const youtubeCoverImages = [
+    'https://i.scdn.co/image/ab67616d0000b27382b243023b937fd579a35533',
+    'https://i.scdn.co/image/ab67616d0000b273800d7b017410db9263c69a18',
+    'https://i.scdn.co/image/ab67616d0000b27333b8541201f1ef38941024be',
+    'https://i.scdn.co/image/ab67616d0000b2731a63f7fd77bf6757c3edf448'
+  ];
+  
+  // Extract some data from URL if possible to make mocking more convincing
+  let extractedData = {};
+  
+  // Extract YouTube video ID (simple extraction, could be improved)
+  if (isYoutube) {
+    try {
+      let videoId = '';
+      if (url.includes('watch?v=')) {
+        videoId = url.split('watch?v=')[1].split('&')[0];
+      } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1].split('?')[0];
+      }
+      
+      if (videoId) {
+        // Use the video ID to create some deterministic but random-looking data
+        const idSum = videoId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+        const artistIndex = idSum % youtubeArtists.length;
+        const titleIndex = (idSum + 3) % youtubeTitles.length;
+        const coverIndex = (idSum + 7) % youtubeCoverImages.length;
+        
+        extractedData = {
+          artist: youtubeArtists[artistIndex],
+          title: youtubeTitles[titleIndex],
+          coverUrl: youtubeCoverImages[coverIndex]
+        };
+      }
+    } catch (e) {
+      console.error('Failed to extract YouTube ID');
+    }
+  }
+  
+  // Extract Spotify track ID
+  if (isSpotify) {
+    try {
+      let trackId = '';
+      if (url.includes('/track/')) {
+        trackId = url.split('/track/')[1].split('?')[0];
+      }
+      
+      if (trackId) {
+        // Use the track ID to create some deterministic but random-looking data
+        const idSum = trackId.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+        const artistIndex = idSum % spotifyArtists.length;
+        const titleIndex = (idSum + 2) % spotifyTitles.length;
+        const coverIndex = (idSum + 5) % spotifyCoverImages.length;
+        
+        extractedData = {
+          artist: spotifyArtists[artistIndex],
+          title: spotifyTitles[titleIndex],
+          coverUrl: spotifyCoverImages[coverIndex]
+        };
+      }
+    } catch (e) {
+      console.error('Failed to extract Spotify ID');
+    }
+  }
+  
+  // If we couldn't extract data, fall back to random selection
+  if (Object.keys(extractedData).length === 0) {
+    const artists = isYoutube ? youtubeArtists : spotifyArtists;
+    const titles = isYoutube ? youtubeTitles : spotifyTitles;
+    const coverImages = isYoutube ? youtubeCoverImages : spotifyCoverImages;
+    
+    const randomArtist = artists[Math.floor(Math.random() * artists.length)];
+    const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+    const randomCover = coverImages[Math.floor(Math.random() * coverImages.length)];
+    
+    extractedData = {
+      artist: randomArtist,
+      title: randomTitle,
+      coverUrl: randomCover
+    };
+  }
   
   return {
-    title: randomTitle,
-    artist: randomArtist,
-    coverUrl: randomCover,
+    ...extractedData,
     source: isYoutube ? 'youtube' : 'spotify'
   };
 };
@@ -105,6 +198,18 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
 
   const addTrack = async (url: string): Promise<void> => {
     try {
+      if (!url.trim()) {
+        throw new Error('Please enter a URL');
+      }
+      
+      // Validate URL format
+      const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
+      const isSpotify = url.includes('spotify.com');
+      
+      if (!isYoutube && !isSpotify) {
+        throw new Error('Only YouTube Music and Spotify links are supported');
+      }
+      
       const mockData = generateMockData(url);
       const newTrack: Track = {
         id: `track_${Date.now()}`,
@@ -133,6 +238,7 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
           variant: "destructive"
         });
       }
+      throw error; // Re-throw to let the UI handle it
     }
   };
 
