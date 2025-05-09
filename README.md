@@ -1,4 +1,11 @@
-# Welcome to our Music Url-Based Music
+# Welcome to our Music Url-Based Website
+
+Developers
+
+LEO 🦁 
+SIMON 🐦 
+MIGUEL 🐻 
+DANIEL 🐼 
 
 ## Project info
 
