@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,16 +9,21 @@ import { useAuth } from '@/contexts/AuthContext';
 export const LoginForm = () => {
   const [id, setId] = useState('');
   const [captchaAnswer, setCaptchaAnswer] = useState('');
-  const [captchaQuestion, setCaptchaQuestion] = useState('');
   const { login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaQuestion, setCaptchaQuestion] = useState('');
 
-  useEffect(() => {
-    // Generate a simple math captcha
+  // Generate a simple math captcha on component mount
+  React.useEffect(() => {
+    generateCaptcha();
+  }, []);
+
+  const generateCaptcha = () => {
     const num1 = Math.floor(Math.random() * 10);
     const num2 = Math.floor(Math.random() * 10);
     setCaptchaQuestion(`What is ${num1} + ${num2}?`);
-  }, []);
+    // We don't need to store the answer here anymore, it's calculated in AuthContext
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

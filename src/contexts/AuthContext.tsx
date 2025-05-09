@@ -20,6 +20,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
+  const [captchaQuestion, setCaptchaQuestion] = useState<{question: string, answer: string}>({ 
+    question: '', 
+    answer: ''
+  });
   
   useEffect(() => {
     // Check if user is stored in localStorage
@@ -31,7 +35,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('Failed to parse stored user data');
       }
     }
+    
+    // Generate new captcha on initial load
+    generateCaptcha();
   }, []);
+  
+  // Generate a new captcha question and store its answer
+  const generateCaptcha = () => {
+    const num1 = Math.floor(Math.random() * 10);
+    const num2 = Math.floor(Math.random() * 10);
+    const question = `What is ${num1} + ${num2}?`;
+    const answer = String(num1 + num2);
+    
+    setCaptchaQuestion({ question, answer });
+    return { question, answer };
+  };
 
   const login = async (id: string, captchaAnswer: string): Promise<boolean> => {
     // Simple validation for demo purposes
@@ -44,10 +62,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return false;
     }
     
-    // Simple math captcha validation
-    const correctAnswer = getCorrectCaptchaAnswer();
-    
-    if (captchaAnswer !== correctAnswer) {
+    // Compare the provided answer with the stored correct answer
+    if (captchaAnswer !== captchaQuestion.answer) {
       toast({
         title: "CAPTCHA Failed",
         description: "Incorrect answer to verification question",
@@ -84,14 +100,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       title: "Logged out",
       description: "You have been logged out successfully",
     });
+    
+    // Generate new captcha after logout
+    generateCaptcha();
   };
 
-  // Helper function to get correct captcha answer (for demo purposes)
-  const getCorrectCaptchaAnswer = (): string => {
-    // This would normally be dynamically generated and checked against a server
-    return "8"; // Simple math answer for demo
-  };
-  
   return (
     <AuthContext.Provider value={{
       user,
@@ -110,4 +123,16 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+};
+
+export const useCaptcha = () => {
+  const context = useContext(AuthContext) as any;
+  if (context === undefined) {
+    throw new Error('useCaptcha must be used within an AuthProvider');
+  }
+  
+  return {
+    generateCaptcha: context.generateCaptcha,
+    captchaQuestion: context.captchaQuestion?.question
+  };
 };
