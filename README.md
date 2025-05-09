@@ -2,10 +2,13 @@
 
 Developers:
 
+BACKEND DEVELOPER:
+DANIEL 💻
+
+FRONTEND DEVELOPERS:
 LEO 🦁 
 SIMON 🐦 
 MIGUEL 🐻 
-DANIEL 🐼 
 
 ## Project info
 
