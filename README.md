@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to our Music Url-Based Music
 
 ## Project info
 
@@ -10,7 +10,8 @@ There are several ways of editing your application.
 
 **Use Lovable**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ac6f9625-03e1-4f08-b2fd-5b2b83d473ff) and start prompting.
+Simply visit the [Lovable]
+ Project](https://lovable.dev/projects/ac6f9625-03e1-4f08-b2fd-5b2b83d473ff) and start prompting. 
 
 Changes made via Lovable will be committed automatically to this repo.
 
@@ -39,7 +40,9 @@ npm run dev
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
+
 - Click the "Edit" button (pencil icon) at the top right of the file view.
+
 - Make your changes and commit the changes.
 
 **Use GitHub Codespaces**
