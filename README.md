@@ -1,6 +1,6 @@
 # Welcome to our Music Url-Based Website
 
-Developers
+Developers:
 
 LEO 🦁 
 SIMON 🐦 
