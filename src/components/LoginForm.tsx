@@ -9,30 +9,27 @@ import { useAuth } from '@/contexts/AuthContext';
 export const LoginForm = () => {
   const [id, setId] = useState('');
   const [captchaAnswer, setCaptchaAnswer] = useState('');
-  const { login } = useAuth();
+  const { login, captchaQuestion, generateCaptcha } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [captchaQuestion, setCaptchaQuestion] = useState('');
-
-  // Generate a simple math captcha on component mount
-  React.useEffect(() => {
-    generateCaptcha();
-  }, []);
-
-  const generateCaptcha = () => {
-    const num1 = Math.floor(Math.random() * 10);
-    const num2 = Math.floor(Math.random() * 10);
-    setCaptchaQuestion(`What is ${num1} + ${num2}?`);
-    // We don't need to store the answer here anymore, it's calculated in AuthContext
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      await login(id, captchaAnswer);
+      const success = await login(id, captchaAnswer);
+      if (success) {
+        // Successful login
+        setCaptchaAnswer('');
+      } else {
+        // Failed login, clear the captcha answer field
+        setCaptchaAnswer('');
+      }
     } catch (error) {
       console.error('Login error:', error);
+      // Generate new captcha on error
+      generateCaptcha();
+      setCaptchaAnswer('');
     } finally {
       setIsLoading(false);
     }
@@ -43,6 +40,11 @@ export const LoginForm = () => {
     const randomDigits = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     const generatedId = `2025${randomDigits}`;
     setId(generatedId);
+  };
+
+  const refreshCaptcha = () => {
+    generateCaptcha();
+    setCaptchaAnswer('');
   };
 
   return (
@@ -79,8 +81,28 @@ export const LoginForm = () => {
                 </Button>
               </div>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="captcha">{captchaQuestion}</Label>
+              <div className="flex justify-between items-center">
+                <Label htmlFor="captcha">CAPTCHA Verification</Label>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={refreshCaptcha}
+                  className="h-8 px-2 text-xs"
+                >
+                  New Question
+                </Button>
+              </div>
+              
+              <div className="p-3 bg-slate-800/50 rounded-md mb-2">
+                <div 
+                  className="text-sm font-medium"
+                  dangerouslySetInnerHTML={{ __html: captchaQuestion }}
+                />
+              </div>
+              
               <Input 
                 id="captcha" 
                 type="text" 
@@ -90,6 +112,7 @@ export const LoginForm = () => {
                 required
               />
             </div>
+            
             <Button 
               type="submit" 
               className="w-full bg-meltin-purple hover:bg-meltin-purple/90"
