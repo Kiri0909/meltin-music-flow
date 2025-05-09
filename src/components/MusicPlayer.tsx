@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,9 +86,13 @@ export const MusicPlayer = () => {
     }
     
     setUrlError(null);
-    await addTrack(inputUrl);
-    setInputUrl('');
-    setIsAddDialogOpen(false);
+    try {
+      await addTrack(inputUrl);
+      setInputUrl('');
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      // Error is already handled in the context with toast
+    }
   };
 
   const handleEditTrack = () => {
@@ -212,32 +217,43 @@ export const MusicPlayer = () => {
           
           {/* Now Playing Section */}
           <Card className="glass-card overflow-hidden flex flex-col">
-            <CardContent className="p-4 flex-grow flex flex-col items-center justify-center">
+            <CardContent className="p-4 flex-grow flex flex-col">
               {currentTrack ? (
                 <>
-                  <div 
-                    className="w-40 h-40 md:w-48 md:h-48 rounded-lg bg-cover bg-center mb-6 shadow-xl animate-float"
-                    style={{ backgroundImage: `url(${currentTrack.coverUrl})` }}
-                  />
+                  {currentTrack.embedCode ? (
+                    <div className="w-full mb-6">
+                      <div
+                        className="w-full rounded-lg overflow-hidden"
+                        dangerouslySetInnerHTML={{ __html: currentTrack.embedCode }}
+                      />
+                    </div>
+                  ) : (
+                    <div 
+                      className="w-40 h-40 md:w-48 md:h-48 rounded-lg bg-cover bg-center mb-6 shadow-xl animate-float mx-auto"
+                      style={{ backgroundImage: `url(${currentTrack.coverUrl})` }}
+                    />
+                  )}
                   
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-1 justify-center">
                     <h3 className="font-bold text-xl text-center">{currentTrack.title}</h3>
                     {getSourceIcon(currentTrack.source)}
                   </div>
                   <p className="text-gray-400 text-center mb-6">{currentTrack.artist}</p>
                   
-                  <div className="w-full mb-6">
-                    <Slider
-                      value={[progress]}
-                      max={100}
-                      step={0.1}
-                      className="mb-2"
-                    />
-                    <div className="flex justify-between text-xs text-gray-400">
-                      <span>0:00</span>
-                      <span>3:45</span>
+                  {!currentTrack.embedCode && (
+                    <div className="w-full mb-6">
+                      <Slider
+                        value={[progress]}
+                        max={100}
+                        step={0.1}
+                        className="mb-2"
+                      />
+                      <div className="flex justify-between text-xs text-gray-400">
+                        <span>0:00</span>
+                        <span>3:45</span>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center text-center p-8 animate-float">
@@ -322,12 +338,22 @@ export const MusicPlayer = () => {
           <div className="space-y-4 py-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Link size={18} className="text-muted-foreground" />
+                <Link size={18} className={inputUrl && validateMusicUrl(inputUrl) ? 
+                  (inputUrl.includes('youtube') ? 'text-red-500' : 'text-green-500') : 
+                  'text-muted-foreground'} 
+                />
               </div>
               <Input
                 placeholder="Paste YouTube Music or Spotify URL"
                 value={inputUrl}
-                onChange={(e) => setInputUrl(e.target.value)}
+                onChange={(e) => {
+                  setInputUrl(e.target.value);
+                  if (e.target.value && !validateMusicUrl(e.target.value)) {
+                    setUrlError("Please enter a valid YouTube Music or Spotify URL");
+                  } else {
+                    setUrlError(null);
+                  }
+                }}
                 className="pl-10"
               />
             </div>
@@ -340,11 +366,11 @@ export const MusicPlayer = () => {
               <p className="font-medium">Supported formats:</p>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-red-500/10 text-red-500">YouTube</Badge>
-                <span>https://music.youtube.com/watch?v=...</span>
+                <span className="text-xs truncate">https://www.youtube.com/watch?v=dQw4w9WgXcQ</span>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-green-500/10 text-green-500">Spotify</Badge>
-                <span>https://open.spotify.com/track/...</span>
+                <span className="text-xs truncate">https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT</span>
               </div>
             </div>
           </div>
@@ -354,7 +380,12 @@ export const MusicPlayer = () => {
               setUrlError(null);
               setInputUrl('');
             }}>Cancel</Button>
-            <Button onClick={handleAddTrack}>Add Track</Button>
+            <Button 
+              onClick={handleAddTrack}
+              disabled={!inputUrl || !!urlError}
+            >
+              Add Track
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
