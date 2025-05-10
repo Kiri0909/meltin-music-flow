@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -49,12 +50,12 @@ const generateEmbedCode = (url: string): string | undefined => {
     }
     
     if (videoId) {
-      // Enhanced YouTube embed with API enabled for bot control
+      // Enhanced YouTube embed with API enabled for control
       return `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     }
   }
   
-  // For Spotify - Enhanced for bot integration
+  // For Spotify - Enhanced for full playback
   if (url.includes('spotify.com')) {
     let trackId = '';
     let embedType = 'track'; // Default to track
@@ -75,16 +76,29 @@ const generateEmbedCode = (url: string): string | undefined => {
     }
     
     if (trackId) {
-      // Enhanced Spotify embed for full playback and bot control
-      return `<iframe src="https://open.spotify.com/embed/${embedType}/${trackId}?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" style="border-radius:12px" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+      // Enhanced Spotify embed with full playback enabled
+      // Adding compact=0 to allow full playback, not just previews
+      return `<iframe src="https://open.spotify.com/embed/${embedType}/${trackId}?utm_source=generator&theme=0&compact=0" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
     }
   }
   
   // Special handling for Discord bot links
   if (url.includes('discord.gg/')) {
     const discordInviteId = url.split('discord.gg/')[1].split(' ')[0];
-    // Return message about Discord bot integration
-    return `<div class="discord-bot-container p-4 rounded-lg bg-gray-800"><p class="text-center">Discord Bot Integration Ready: <strong>${discordInviteId}</strong></p><p class="text-xs text-center mt-2">Bot will be connected when you play music.</p></div>`;
+    // Return enhanced Discord bot integration UI
+    return `<div class="discord-bot-container p-6 rounded-lg bg-gray-800 text-white">
+      <div class="flex items-center justify-center mb-3">
+        <svg class="w-8 h-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 12h.01M15 12h.01M8.5 19H8a2 2 0 0 1-2-2v-5.5a2 2 0 0 1 .15-.85l.85-1.7A2 2 0 0 1 8.8 8h6.4a2 2 0 0 1 1.8 1.05l.85 1.7a2 2 0 0 1 .15.85V17a2 2 0 0 1-2 2h-.5M8.5 19h7M10 8V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3M2 14h3M19 14h3M2 19h3M19 19h3"/>
+        </svg>
+        <span class="ml-2 text-lg font-semibold">Discord Music Bot</span>
+      </div>
+      <p class="text-center text-sm mb-4">Invite ID: <strong>${discordInviteId}</strong></p>
+      <div class="text-center text-xs">
+        <p class="mb-1">Supports both YouTube and Spotify playback</p>
+        <p>Click <strong>Connect</strong> to activate the bot</p>
+      </div>
+    </div>`;
   }
   
   return undefined;
