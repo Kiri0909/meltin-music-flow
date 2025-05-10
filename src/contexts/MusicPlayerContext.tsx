@@ -9,7 +9,8 @@ type Track = {
   coverUrl: string;
   isFavorite: boolean;
   source: 'youtube' | 'spotify';
-  embedCode?: string; // Added embedCode field to store the generated embed HTML
+  embedCode?: string;
+  contentType?: 'track' | 'album' | 'playlist' | 'artist'; // Added content type field
 };
 
 type MusicPlayerContextType = {
@@ -33,11 +34,36 @@ type MusicPlayerContextType = {
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
 
+// Function to determine content type from URL
+const getContentTypeFromUrl = (url: string): 'track' | 'album' | 'playlist' | 'artist' => {
+  if (url.includes('spotify.com')) {
+    if (url.includes('/track/')) return 'track';
+    if (url.includes('/album/')) return 'album';
+    if (url.includes('/playlist/')) return 'playlist';
+    if (url.includes('/artist/')) return 'artist';
+  }
+  
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    if (url.includes('list=')) return 'playlist';
+    return 'track'; // Default for YouTube is track
+  }
+  
+  return 'track'; // Default is track
+};
+
 // Function to generate embed code based on the URL
 const generateEmbedCode = (url: string): string | undefined => {
   // For YouTube Music or regular YouTube
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     let videoId = '';
+    let playlistId = '';
+    let embedUrl = '';
+    
+    // Check if URL contains a playlist
+    const playlistMatch = url.match(/[?&]list=([^&]+)/);
+    if (playlistMatch) {
+      playlistId = playlistMatch[1];
+    }
     
     // Extract YouTube video ID from different URL formats
     if (url.includes('watch?v=')) {
@@ -48,36 +74,54 @@ const generateEmbedCode = (url: string): string | undefined => {
       videoId = url.split('youtube.com/embed/')[1].split('?')[0];
     }
     
-    if (videoId) {
-      // Enhanced YouTube embed with API enabled for control
-      return `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+    // Construct the embed URL
+    if (playlistId) {
+      // Embed a playlist (with optional starting video)
+      embedUrl = videoId
+        ? `https://www.youtube.com/embed/${videoId}?list=${playlistId}&enablejsapi=1&origin=${window.location.origin}`
+        : `https://www.youtube.com/embed/videoseries?list=${playlistId}&enablejsapi=1&origin=${window.location.origin}`;
+    } else if (videoId) {
+      // Embed a single video
+      embedUrl = `https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}`;
+    }
+    
+    if (embedUrl) {
+      return `<iframe width="100%" height="315" src="${embedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     }
   }
   
-  // For Spotify - Enhanced for full playback
+  // For Spotify
   if (url.includes('spotify.com')) {
-    let trackId = '';
+    let contentId = '';
     let embedType = 'track'; // Default to track
     
     // Extract Spotify ID based on content type
     if (url.includes('/track/')) {
-      trackId = url.split('/track/')[1].split('?')[0];
+      contentId = url.split('/track/')[1].split('?')[0];
       embedType = 'track';
     } else if (url.includes('/album/')) {
-      trackId = url.split('/album/')[1].split('?')[0];
+      contentId = url.split('/album/')[1].split('?')[0];
       embedType = 'album';
     } else if (url.includes('/playlist/')) {
-      trackId = url.split('/playlist/')[1].split('?')[0];
+      contentId = url.split('/playlist/')[1].split('?')[0];
       embedType = 'playlist';
     } else if (url.includes('/artist/')) {
-      trackId = url.split('/artist/')[1].split('?')[0];
+      contentId = url.split('/artist/')[1].split('?')[0];
       embedType = 'artist';
     }
     
-    if (trackId) {
-      // Enhanced Spotify embed with full playback enabled
-      // Adding compact=0 to allow full playback, not just previews
-      return `<iframe src="https://open.spotify.com/embed/${embedType}/${trackId}?utm_source=generator&theme=0&compact=0" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+    if (contentId) {
+      // Set appropriate height based on content type
+      let height = "152"; // Default for tracks
+      
+      if (embedType === 'album' || embedType === 'playlist') {
+        height = "380";
+      } else if (embedType === 'artist') {
+        height = "380";
+      }
+      
+      // Create the Spotify embed with compact=0 to allow full playback
+      return `<iframe src="https://open.spotify.com/embed/${embedType}/${contentId}?utm_source=generator&theme=0&compact=0" width="100%" height="${height}" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
     }
   }
   
@@ -94,40 +138,70 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
     throw new Error('Only YouTube Music and Spotify links are supported');
   }
   
+  // Determine content type
+  const contentType = getContentTypeFromUrl(url);
+  
   // Generate embed code based on the URL
   const embedCode = generateEmbedCode(url);
   
   // Extract data from the URL if possible
-  let extractedData: Partial<Track> = { source: isYoutube ? 'youtube' : 'spotify', embedCode };
+  let extractedData: Partial<Track> = { 
+    source: isYoutube ? 'youtube' : 'spotify', 
+    embedCode,
+    contentType
+  };
+  
+  // Generate title based on content type
+  let title = 'Unknown Track';
+  let artist = 'Unknown Artist';
+  
+  if (contentType === 'album') {
+    title = isYoutube ? 'YouTube Album' : 'Spotify Album';
+  } else if (contentType === 'playlist') {
+    title = isYoutube ? 'YouTube Playlist' : 'Spotify Playlist';
+  } else if (contentType === 'artist') {
+    title = isSpotify ? 'Spotify Artist Profile' : 'YouTube Artist';
+    artist = title;
+  }
   
   // Extract YouTube information
   if (isYoutube) {
     try {
       let videoId = '';
-      let title = 'YouTube Track';
-      let artist = 'YouTube Artist';
+      let playlistId = '';
       
-      // Extract video ID
+      // Extract video and playlist IDs
       if (url.includes('watch?v=')) {
         videoId = url.split('watch?v=')[1].split('&')[0];
       } else if (url.includes('youtu.be/')) {
         videoId = url.split('youtu.be/')[1].split('?')[0];
       }
       
-      if (videoId) {
-        // Use video ID to generate a title and artist
-        // In a real implementation, you would call the YouTube API here
-        const idFirstChars = videoId.substring(0, 3);
+      // Extract playlist ID if present
+      const playlistMatch = url.match(/[?&]list=([^&]+)/);
+      if (playlistMatch) {
+        playlistId = playlistMatch[1];
+      }
+      
+      // Generate identifier for title
+      const idFirstChars = playlistId ? playlistId.substring(0, 3) : (videoId ? videoId.substring(0, 3) : '');
+      
+      if (contentType === 'playlist') {
+        title = `YouTube Playlist ${idFirstChars}`;
+        artist = `Various Artists`;
+      } else {
         title = `YouTube Track ${idFirstChars}`;
         artist = `Artist ${idFirstChars}`;
-        
-        extractedData = {
-          ...extractedData,
-          title,
-          artist,
-          coverUrl: `https://img.youtube.com/vi/${videoId}/0.jpg` // YouTube thumbnail
-        };
       }
+      
+      extractedData = {
+        ...extractedData,
+        title,
+        artist,
+        coverUrl: videoId 
+          ? `https://img.youtube.com/vi/${videoId}/0.jpg` 
+          : 'https://i.ytimg.com/vi/default/hqdefault.jpg' // Default YouTube thumbnail
+      };
     } catch (e) {
       console.error('Failed to extract YouTube data', e);
     }
@@ -136,27 +210,41 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
   // Extract Spotify information
   if (isSpotify) {
     try {
-      let trackId = '';
-      let title = 'Spotify Track';
-      let artist = 'Spotify Artist';
+      let contentId = '';
       
-      // Extract track ID
+      // Extract appropriate ID based on content type
       if (url.includes('/track/')) {
-        trackId = url.split('/track/')[1].split('?')[0];
+        contentId = url.split('/track/')[1].split('?')[0];
       } else if (url.includes('/album/')) {
-        trackId = url.split('/album/')[1].split('?')[0];
+        contentId = url.split('/album/')[1].split('?')[0];
         title = 'Spotify Album';
       } else if (url.includes('/playlist/')) {
-        trackId = url.split('/playlist/')[1].split('?')[0];
+        contentId = url.split('/playlist/')[1].split('?')[0];
         title = 'Spotify Playlist';
+        artist = 'Various Artists';
+      } else if (url.includes('/artist/')) {
+        contentId = url.split('/artist/')[1].split('?')[0];
+        title = 'Artist Profile';
+        artist = title;
       }
       
-      if (trackId) {
-        // Use track ID to generate a title and artist
-        // In a real implementation, you would call the Spotify API here
-        const idFirstChars = trackId.substring(0, 3);
-        title = `${title} ${idFirstChars}`;
-        artist = `Artist ${idFirstChars}`;
+      if (contentId) {
+        // Use content ID to generate a title and artist
+        const idFirstChars = contentId.substring(0, 3);
+        
+        if (contentType === 'track') {
+          title = `Spotify Track ${idFirstChars}`;
+          artist = `Artist ${idFirstChars}`;
+        } else if (contentType === 'album') {
+          title = `Spotify Album ${idFirstChars}`;
+          artist = `Album Artist ${idFirstChars}`;
+        } else if (contentType === 'playlist') {
+          title = `Spotify Playlist ${idFirstChars}`;
+          artist = `Various Artists`;
+        } else if (contentType === 'artist') {
+          title = `Spotify Artist ${idFirstChars}`;
+          artist = title;
+        }
         
         // Default Spotify album art
         const defaultCover = 'https://i.scdn.co/image/ab67616d0000b273608140c63299dfde25527028';
@@ -285,6 +373,8 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       }
       
       const mockData = generateMockData(url);
+      const contentType = getContentTypeFromUrl(url);
+      
       const newTrack: Track = {
         id: `track_${Date.now()}`,
         url,
@@ -293,12 +383,13 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
         coverUrl: mockData.coverUrl || '',
         isFavorite: false,
         source: mockData.source || 'youtube',
-        embedCode: mockData.embedCode
+        embedCode: mockData.embedCode,
+        contentType: contentType
       };
       
       setTracks(prev => [newTrack, ...prev]);
       toast({
-        title: "Track Added",
+        title: `${contentType.charAt(0).toUpperCase() + contentType.slice(1)} Added`,
         description: `${newTrack.title} by ${newTrack.artist} added to your playlist`,
       });
       

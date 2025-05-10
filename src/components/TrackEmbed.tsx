@@ -77,14 +77,31 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({
     );
   }
 
-  // Determine if this is a Spotify embed to apply proper styling
+  // Determine if this is a Spotify embed and what type (track, album, playlist, artist)
   const isSpotify = embedCode.includes('spotify.com');
+  const isSpotifyArtist = isSpotify && embedCode.includes('/artist/');
+  const isSpotifyPlaylist = isSpotify && embedCode.includes('/playlist/');
+  const isSpotifyAlbum = isSpotify && embedCode.includes('/album/');
+  
+  // Determine if this is a YouTube embed and what type
+  const isYouTubePlaylist = embedCode.includes('youtube.com') && embedCode.includes('list=');
+
+  // Apply different aspect ratios based on content type
+  let aspectRatioClass = 'aspect-video'; // default for tracks
+  
+  if (isSpotifyArtist || isSpotifyPlaylist || isSpotifyAlbum) {
+    aspectRatioClass = 'aspect-[16/12] md:aspect-[16/10]'; // taller for collections
+  }
+  
+  if (isYouTubePlaylist) {
+    aspectRatioClass = 'aspect-[16/10]'; // slightly taller for YT playlists
+  }
 
   return (
     <div className="w-full mb-6">
       <div
         ref={embedRef}
-        className={`w-full rounded-lg overflow-hidden ${isSpotify ? 'aspect-[16/9] md:aspect-[16/8]' : 'aspect-video'}`}
+        className={`w-full rounded-lg overflow-hidden ${aspectRatioClass}`}
         dangerouslySetInnerHTML={{ __html: embedCode }}
       />
     </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,9 @@ import {
   Pencil, 
   Link,
   Music,
-  Youtube 
+  Album,
+  Playlist,
+  Headphones
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
@@ -136,12 +139,30 @@ export const MusicPlayer = () => {
       <Badge variant="outline" className={`text-xs ${source === 'youtube' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
         {source === 'youtube' ? (
           <>
-            <Youtube size={12} className="mr-1" />
+            <Headphones size={12} className="mr-1" />
             YouTube
           </>
-        ) : 'Spotify'}
+        ) : (
+          <>
+            <Music size={12} className="mr-1" />
+            Spotify
+          </>
+        )}
       </Badge>
     );
+  };
+  
+  const getContentTypeIcon = (contentType?: 'track' | 'album' | 'playlist' | 'artist') => {
+    switch (contentType) {
+      case 'album':
+        return <Album size={16} className="mr-1" />;
+      case 'playlist':
+        return <Playlist size={16} className="mr-1" />;
+      case 'artist':
+        return <Headphones size={16} className="mr-1" />;
+      default:
+        return <Music size={16} className="mr-1" />;
+    }
   };
 
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
@@ -152,7 +173,7 @@ export const MusicPlayer = () => {
         {/* Player Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-meltin animate-gradient-shift">
-            Your Playlist
+            Your Music Collection
           </h2>
           <div className="flex gap-2">
             <Button 
@@ -161,7 +182,7 @@ export const MusicPlayer = () => {
               onClick={() => setIsAddDialogOpen(true)}
             >
               <Plus size={18} />
-              <span>Add Track</span>
+              <span>Add Music</span>
             </Button>
           </div>
         </div>
@@ -174,9 +195,9 @@ export const MusicPlayer = () => {
               {tracks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-float">
                   <Music2 size={48} className="mb-4 text-meltin-purple opacity-70" />
-                  <h3 className="text-xl font-medium">No tracks in playlist</h3>
+                  <h3 className="text-xl font-medium">No music in collection</h3>
                   <p className="text-sm text-gray-400 mt-2">
-                    Add YouTube or Spotify links to create your playlist
+                    Add YouTube or Spotify links to create your collection
                   </p>
                 </div>
               ) : (
@@ -199,7 +220,15 @@ export const MusicPlayer = () => {
                           <h3 className="font-medium truncate">{track.title}</h3>
                           {getSourceIcon(track.source)}
                         </div>
-                        <p className="text-sm text-gray-400 truncate">{track.artist}</p>
+                        <div className="flex items-center text-sm text-gray-400">
+                          {track.contentType && (
+                            <Badge variant="outline" className="mr-2 text-[10px] flex items-center">
+                              {getContentTypeIcon(track.contentType)}
+                              {track.contentType.charAt(0).toUpperCase() + track.contentType.slice(1)}
+                            </Badge>
+                          )}
+                          <span className="truncate">{track.artist}</span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button 
@@ -250,11 +279,21 @@ export const MusicPlayer = () => {
                     onReady={() => console.log("Player ready")}
                   />
                   
-                  <div className="flex items-center gap-2 mb-1 justify-center">
-                    <h3 className="font-bold text-xl text-center">{currentTrack.title}</h3>
-                    {getSourceIcon(currentTrack.source)}
+                  <div className="flex flex-col items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 justify-center">
+                      <h3 className="font-bold text-xl text-center">{currentTrack.title}</h3>
+                      {getSourceIcon(currentTrack.source)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {currentTrack.contentType && (
+                        <Badge variant="outline" className="flex items-center">
+                          {getContentTypeIcon(currentTrack.contentType)}
+                          {currentTrack.contentType.charAt(0).toUpperCase() + currentTrack.contentType.slice(1)}
+                        </Badge>
+                      )}
+                      <p className="text-gray-400">{currentTrack.artist}</p>
+                    </div>
                   </div>
-                  <p className="text-gray-400 text-center mb-6">{currentTrack.artist}</p>
                   
                   {!currentTrack.embedCode && (
                     <div className="w-full mb-6">
@@ -274,9 +313,9 @@ export const MusicPlayer = () => {
               ) : (
                 <div className="flex flex-col items-center justify-center text-center p-8 animate-float">
                   <Music2 size={48} className="mb-4 text-meltin-purple opacity-70" />
-                  <h3 className="text-xl font-medium">No track playing</h3>
+                  <h3 className="text-xl font-medium">No music playing</h3>
                   <p className="text-sm text-gray-400 mt-2">
-                    Select a track from your playlist to start listening
+                    Select a track, album, playlist, or artist from your collection to start listening
                   </p>
                 </div>
               )}
@@ -336,7 +375,7 @@ export const MusicPlayer = () => {
         </div>
       </div>
 
-      {/* Add Track Dialog */}
+      {/* Add Music Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
         setIsAddDialogOpen(open);
         if (!open) {
@@ -346,9 +385,9 @@ export const MusicPlayer = () => {
       }}>
         <DialogContent className="glass-card">
           <DialogHeader>
-            <DialogTitle>Add New Track</DialogTitle>
+            <DialogTitle>Add Music</DialogTitle>
             <DialogDescription>
-              Paste a YouTube or Spotify link to add it to your playlist
+              Paste a YouTube Music or Spotify link to add tracks, albums, playlists, or artists
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -356,7 +395,7 @@ export const MusicPlayer = () => {
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 {inputUrl && validateMusicUrl(inputUrl) ? (
                   inputUrl.includes('youtube') ? (
-                    <Youtube size={18} className="text-red-500" />
+                    <Headphones size={18} className="text-red-500" />
                   ) : (
                     <Music size={18} className="text-green-500" />
                   )
@@ -386,12 +425,24 @@ export const MusicPlayer = () => {
             <div className="text-xs text-muted-foreground space-y-1">
               <p className="font-medium">Supported formats:</p>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-red-500/10 text-red-500">YouTube</Badge>
-                <span className="text-xs truncate">https://www.youtube.com/watch?v=dQw4w9WgXcQ</span>
+                <Badge variant="outline" className="bg-red-500/10 text-red-500">
+                  <Headphones size={12} className="mr-1" />
+                  YouTube
+                </Badge>
+                <div className="flex flex-col">
+                  <span className="text-xs truncate">Track: https://www.youtube.com/watch?v=dQw4w9WgXcQ</span>
+                  <span className="text-xs truncate">Playlist: https://music.youtube.com/playlist?list=PLAYLIST_ID</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="bg-green-500/10 text-green-500">Spotify</Badge>
-                <span className="text-xs truncate">https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT</span>
+                <Badge variant="outline" className="bg-green-500/10 text-green-500">
+                  <Music size={12} className="mr-1" />
+                  Spotify
+                </Badge>
+                <div className="flex flex-col">
+                  <span className="text-xs truncate">Track/Album: https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT</span>
+                  <span className="text-xs truncate">Artist/Playlist: https://open.spotify.com/artist/ARTIST_ID</span>
+                </div>
               </div>
             </div>
           </div>
@@ -405,7 +456,7 @@ export const MusicPlayer = () => {
               onClick={handleAddTrack}
               disabled={!inputUrl || !!urlError}
             >
-              Add Track
+              Add Music
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -415,9 +466,9 @@ export const MusicPlayer = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="glass-card">
           <DialogHeader>
-            <DialogTitle>Edit Track</DialogTitle>
+            <DialogTitle>Edit Music Details</DialogTitle>
             <DialogDescription>
-              Customize the track details
+              Customize the music details
             </DialogDescription>
           </DialogHeader>
           {currentEditTrack && (
