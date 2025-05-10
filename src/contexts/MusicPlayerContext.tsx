@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,11 +35,11 @@ const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(und
 
 // Function to generate embed code based on the URL
 const generateEmbedCode = (url: string): string | undefined => {
-  // For YouTube Music
+  // For YouTube Music or regular YouTube
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     let videoId = '';
     
-    // Extract YouTube video ID
+    // Extract YouTube video ID from different URL formats
     if (url.includes('watch?v=')) {
       videoId = url.split('watch?v=')[1].split('&')[0];
     } else if (url.includes('youtu.be/')) {
@@ -82,25 +81,6 @@ const generateEmbedCode = (url: string): string | undefined => {
     }
   }
   
-  // Special handling for Discord bot links
-  if (url.includes('discord.gg/')) {
-    const discordInviteId = url.split('discord.gg/')[1].split(' ')[0];
-    // Return enhanced Discord bot integration UI
-    return `<div class="discord-bot-container p-6 rounded-lg bg-gray-800 text-white">
-      <div class="flex items-center justify-center mb-3">
-        <svg class="w-8 h-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M9 12h.01M15 12h.01M8.5 19H8a2 2 0 0 1-2-2v-5.5a2 2 0 0 1 .15-.85l.85-1.7A2 2 0 0 1 8.8 8h6.4a2 2 0 0 1 1.8 1.05l.85 1.7a2 2 0 0 1 .15.85V17a2 2 0 0 1-2 2h-.5M8.5 19h7M10 8V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3M2 14h3M19 14h3M2 19h3M19 19h3"/>
-        </svg>
-        <span class="ml-2 text-lg font-semibold">Discord Music Bot</span>
-      </div>
-      <p class="text-center text-sm mb-4">Invite ID: <strong>${discordInviteId}</strong></p>
-      <div class="text-center text-xs">
-        <p class="mb-1">Supports both YouTube and Spotify playback</p>
-        <p>Click <strong>Connect</strong> to activate the bot</p>
-      </div>
-    </div>`;
-  }
-  
   return undefined;
 };
 
@@ -109,10 +89,9 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
   // Identify the source
   const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
   const isSpotify = url.includes('spotify.com');
-  const isDiscord = url.includes('discord.gg/');
   
-  if (!isYoutube && !isSpotify && !isDiscord) {
-    throw new Error('Only YouTube Music, Spotify links, and Discord bot invites are supported');
+  if (!isYoutube && !isSpotify) {
+    throw new Error('Only YouTube Music and Spotify links are supported');
   }
   
   // Generate embed code based on the URL
@@ -300,33 +279,9 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       // Validate URL format
       const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
       const isSpotify = url.includes('spotify.com');
-      const isDiscord = url.includes('discord.gg/');
       
-      if (!isYoutube && !isSpotify && !isDiscord) {
-        throw new Error('Only YouTube Music, Spotify links, and Discord bot invites are supported');
-      }
-      
-      // Handle Discord bot links differently
-      if (isDiscord) {
-        // Create a special "bot connector" track
-        const botTrack: Track = {
-          id: `bot_${Date.now()}`,
-          url,
-          title: 'Discord Music Bot',
-          artist: 'Bot Integration',
-          coverUrl: 'https://cdn.discordapp.com/attachments/123456789/123456789/discord-bot.png', // Placeholder
-          isFavorite: false,
-          source: 'youtube', // Default, will support both
-          embedCode: generateEmbedCode(url)
-        };
-        
-        setTracks(prev => [botTrack, ...prev]);
-        toast({
-          title: "Bot Integration Added",
-          description: "Discord music bot connection has been added to your playlist",
-        });
-        
-        return;
+      if (!isYoutube && !isSpotify) {
+        throw new Error('Only YouTube Music and Spotify links are supported');
       }
       
       const mockData = generateMockData(url);

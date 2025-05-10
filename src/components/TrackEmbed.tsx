@@ -68,29 +68,6 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({
     }
   }, [isPlaying]);
 
-  // Handle Discord bot embed specially
-  if (embedCode && embedCode.includes('discord-bot-container')) {
-    return (
-      <div className="w-full mb-6">
-        <div
-          ref={embedRef}
-          className="w-full rounded-lg overflow-hidden aspect-square"
-          dangerouslySetInnerHTML={{ __html: embedCode }}
-        />
-        <div className="mt-3 space-y-2">
-          <h4 className="text-sm font-medium">Bot Commands:</h4>
-          <div className="bg-black/20 p-3 rounded-md text-xs space-y-1.5">
-            <p><span className="font-mono text-green-400">!play [song]</span> - Play a song</p>
-            <p><span className="font-mono text-green-400">!skip</span> - Skip current song</p>
-            <p><span className="font-mono text-green-400">!stop</span> - Stop playback</p>
-            <p><span className="font-mono text-green-400">!queue</span> - Show current queue</p>
-            <p><span className="font-mono text-green-400">!volume [1-10]</span> - Adjust volume</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (!embedCode) {
     return (
       <div 
