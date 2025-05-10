@@ -16,10 +16,11 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({ embedCode, coverUrl }) => {
     );
   }
 
+  // Use a more responsive wrapper for embeds
   return (
     <div className="w-full mb-6">
       <div
-        className="w-full rounded-lg overflow-hidden"
+        className="w-full rounded-lg overflow-hidden aspect-video"
         dangerouslySetInnerHTML={{ __html: embedCode }}
       />
     </div>

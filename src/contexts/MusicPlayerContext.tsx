@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -53,7 +54,7 @@ const generateEmbedCode = (url: string): string | undefined => {
     }
   }
   
-  // For Spotify
+  // For Spotify - Updated to ensure full playback (not just previews)
   if (url.includes('spotify.com')) {
     let trackId = '';
     let embedType = 'track'; // Default to track
@@ -74,7 +75,8 @@ const generateEmbedCode = (url: string): string | undefined => {
     }
     
     if (trackId) {
-      return `<iframe src="https://open.spotify.com/embed/${embedType}/${trackId}" width="100%" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
+      // Updated Spotify embed code to enable full playback
+      return `<iframe src="https://open.spotify.com/embed/${embedType}/${trackId}?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" style="border-radius:12px" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
     }
   }
   
