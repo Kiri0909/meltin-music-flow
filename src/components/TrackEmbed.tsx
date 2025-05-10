@@ -1,12 +1,73 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface TrackEmbedProps {
   embedCode: string | undefined;
   coverUrl: string;
+  isPlaying: boolean;
+  onReady?: () => void;
+  onEnd?: () => void;
 }
 
-const TrackEmbed: React.FC<TrackEmbedProps> = ({ embedCode, coverUrl }) => {
+const TrackEmbed: React.FC<TrackEmbedProps> = ({ 
+  embedCode, 
+  coverUrl, 
+  isPlaying, 
+  onReady, 
+  onEnd 
+}) => {
+  const embedRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  
+  useEffect(() => {
+    // Handle message events from embedded iframes (for player controls)
+    const handleMessage = (event: MessageEvent) => {
+      // Only handle messages from YouTube or Spotify embeds
+      if (
+        event.origin !== "https://www.youtube.com" && 
+        !event.origin.includes("spotify.com")
+      ) {
+        return;
+      }
+      
+      // Process message data from players
+      if (event.data && typeof event.data === 'object') {
+        // YouTube player events
+        if (event.data.event === 'onStateChange' && event.data.info === 0) {
+          // Video ended (state 0)
+          onEnd && onEnd();
+        } else if (event.data.event === 'onReady') {
+          // Player is ready
+          onReady && onReady();
+        }
+        
+        // Spotify specific events would be handled here
+        // Spotify doesn't send the same events, but would use a different pattern
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.addEventListener('message', handleMessage);
+    };
+  }, [onEnd, onReady]);
+  
+  useEffect(() => {
+    // Control playback based on isPlaying prop
+    if (embedRef.current && playerRef.current) {
+      try {
+        if (isPlaying) {
+          playerRef.current.playVideo && playerRef.current.playVideo();
+        } else {
+          playerRef.current.pauseVideo && playerRef.current.pauseVideo();
+        }
+      } catch (error) {
+        console.log("Cannot control player directly:", error);
+      }
+    }
+  }, [isPlaying]);
+
   if (!embedCode) {
     return (
       <div 
@@ -16,10 +77,10 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({ embedCode, coverUrl }) => {
     );
   }
 
-  // Use a more responsive wrapper for embeds
   return (
     <div className="w-full mb-6">
       <div
+        ref={embedRef}
         className="w-full rounded-lg overflow-hidden aspect-video"
         dangerouslySetInnerHTML={{ __html: embedCode }}
       />

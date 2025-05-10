@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,11 +49,12 @@ const generateEmbedCode = (url: string): string | undefined => {
     }
     
     if (videoId) {
-      return `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      // Enhanced YouTube embed with API enabled for bot control
+      return `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}?enablejsapi=1&origin=${window.location.origin}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     }
   }
   
-  // For Spotify - Updated to ensure full playback (not just previews)
+  // For Spotify - Enhanced for bot integration
   if (url.includes('spotify.com')) {
     let trackId = '';
     let embedType = 'track'; // Default to track
@@ -75,21 +75,30 @@ const generateEmbedCode = (url: string): string | undefined => {
     }
     
     if (trackId) {
-      // Updated Spotify embed code to enable full playback
+      // Enhanced Spotify embed for full playback and bot control
       return `<iframe src="https://open.spotify.com/embed/${embedType}/${trackId}?utm_source=generator&theme=0" width="100%" height="380" frameBorder="0" style="border-radius:12px" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
     }
+  }
+  
+  // Special handling for Discord bot links
+  if (url.includes('discord.gg/')) {
+    const discordInviteId = url.split('discord.gg/')[1].split(' ')[0];
+    // Return message about Discord bot integration
+    return `<div class="discord-bot-container p-4 rounded-lg bg-gray-800"><p class="text-center">Discord Bot Integration Ready: <strong>${discordInviteId}</strong></p><p class="text-xs text-center mt-2">Bot will be connected when you play music.</p></div>`;
   }
   
   return undefined;
 };
 
+// Function to generate mock data based on the URL
 const generateMockData = (url: string): Partial<Track> & { embedCode?: string } => {
   // Identify the source
   const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
   const isSpotify = url.includes('spotify.com');
+  const isDiscord = url.includes('discord.gg/');
   
-  if (!isYoutube && !isSpotify) {
-    throw new Error('Only YouTube Music and Spotify links are supported');
+  if (!isYoutube && !isSpotify && !isDiscord) {
+    throw new Error('Only YouTube Music, Spotify links, and Discord bot invites are supported');
   }
   
   // Generate embed code based on the URL
@@ -277,9 +286,33 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       // Validate URL format
       const isYoutube = url.includes('youtube.com') || url.includes('youtu.be');
       const isSpotify = url.includes('spotify.com');
+      const isDiscord = url.includes('discord.gg/');
       
-      if (!isYoutube && !isSpotify) {
-        throw new Error('Only YouTube Music and Spotify links are supported');
+      if (!isYoutube && !isSpotify && !isDiscord) {
+        throw new Error('Only YouTube Music, Spotify links, and Discord bot invites are supported');
+      }
+      
+      // Handle Discord bot links differently
+      if (isDiscord) {
+        // Create a special "bot connector" track
+        const botTrack: Track = {
+          id: `bot_${Date.now()}`,
+          url,
+          title: 'Discord Music Bot',
+          artist: 'Bot Integration',
+          coverUrl: 'https://cdn.discordapp.com/attachments/123456789/123456789/discord-bot.png', // Placeholder
+          isFavorite: false,
+          source: 'youtube', // Default, will support both
+          embedCode: generateEmbedCode(url)
+        };
+        
+        setTracks(prev => [botTrack, ...prev]);
+        toast({
+          title: "Bot Integration Added",
+          description: "Discord music bot connection has been added to your playlist",
+        });
+        
+        return;
       }
       
       const mockData = generateMockData(url);

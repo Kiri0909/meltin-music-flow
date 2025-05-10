@@ -1,13 +1,28 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, SkipBack, SkipForward, Repeat, Shuffle, Heart, Plus, Music2, Trash2, Pencil, Link } from "lucide-react";
+import { 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward, 
+  Repeat, 
+  Shuffle, 
+  Heart, 
+  Plus, 
+  Music2, 
+  Trash2, 
+  Pencil, 
+  Link,
+  Bot,
+  Music
+} from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Badge } from "@/components/ui/badge";
+import TrackEmbed from './TrackEmbed';
 
 export const MusicPlayer = () => {
   const { 
@@ -35,6 +50,7 @@ export const MusicPlayer = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentEditTrack, setCurrentEditTrack] = useState<{id: string, title: string, artist: string} | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [isBotConnected, setIsBotConnected] = useState(false);
 
   // Simulate progress bar
   useEffect(() => {
@@ -67,11 +83,12 @@ export const MusicPlayer = () => {
   };
 
   const validateMusicUrl = (url: string): boolean => {
-    // Check for YouTube Music or Spotify URLs
+    // Check for YouTube Music, Spotify URLs, or Discord bot links
     const ytMusicRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch|youtu\.be\/|music\.youtube\.com)/i;
     const spotifyRegex = /^(https?:\/\/)?(open\.spotify\.com|spotify\.com)/i;
+    const discordRegex = /^(https?:\/\/)?(discord\.gg\/|discord\.com\/invite\/)/i;
     
-    return ytMusicRegex.test(url) || spotifyRegex.test(url);
+    return ytMusicRegex.test(url) || spotifyRegex.test(url) || discordRegex.test(url);
   };
 
   const handleAddTrack = async () => {
@@ -81,7 +98,7 @@ export const MusicPlayer = () => {
     }
     
     if (!validateMusicUrl(inputUrl)) {
-      setUrlError("Please enter a valid YouTube Music or Spotify URL");
+      setUrlError("Please enter a valid YouTube Music, Spotify URL, or Discord bot invite");
       return;
     }
     
@@ -116,6 +133,11 @@ export const MusicPlayer = () => {
     setIsEditDialogOpen(true);
   };
 
+  const connectBot = () => {
+    setIsBotConnected(true);
+    // In a real implementation, this would establish a connection to the bot
+  };
+
   const getSourceIcon = (source: 'youtube' | 'spotify') => {
     return (
       <Badge variant="outline" className={`text-xs ${source === 'youtube' ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
@@ -125,6 +147,7 @@ export const MusicPlayer = () => {
   };
 
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
+  const isDiscordBot = currentTrack?.title === 'Discord Music Bot';
 
   return (
     <div className="w-full music-player-container min-h-[80vh] rounded-xl overflow-hidden animate-fade-in">
@@ -134,14 +157,22 @@ export const MusicPlayer = () => {
           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-meltin animate-gradient-shift">
             Your Playlist
           </h2>
-          <Button 
-            variant="outline" 
-            className="glass-card flex items-center gap-2" 
-            onClick={() => setIsAddDialogOpen(true)}
-          >
-            <Plus size={18} />
-            <span>Link</span>
-          </Button>
+          <div className="flex gap-2">
+            {isBotConnected && (
+              <Badge variant="outline" className="bg-purple-500/20 text-purple-400 flex items-center gap-1">
+                <Bot size={12} />
+                <span>Bot Active</span>
+              </Badge>
+            )}
+            <Button 
+              variant="outline" 
+              className="glass-card flex items-center gap-2" 
+              onClick={() => setIsAddDialogOpen(true)}
+            >
+              <Plus size={18} />
+              <span>Link</span>
+            </Button>
+          </div>
         </div>
         
         {/* Main Content Area */}
@@ -154,7 +185,7 @@ export const MusicPlayer = () => {
                   <Music2 size={48} className="mb-4 text-meltin-purple opacity-70" />
                   <h3 className="text-xl font-medium">No playlist linked</h3>
                   <p className="text-sm text-gray-400 mt-2">
-                    Add YouTube Music or Spotify links to create your playlist
+                    Add YouTube Music, Spotify links, or a Discord bot to create your playlist
                   </p>
                 </div>
               ) : (
@@ -174,31 +205,54 @@ export const MusicPlayer = () => {
                       />
                       <div className="flex-grow min-w-0" onClick={() => playTrack(index)}>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium truncate">{track.title}</h3>
-                          {getSourceIcon(track.source)}
+                          {track.title === 'Discord Music Bot' ? (
+                            <div className="flex items-center gap-1">
+                              <Bot size={16} />
+                              <h3 className="font-medium truncate">{track.title}</h3>
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="font-medium truncate">{track.title}</h3>
+                              {getSourceIcon(track.source)}
+                            </>
+                          )}
                         </div>
                         <p className="text-sm text-gray-400 truncate">{track.artist}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => toggleFavorite(track.id)}
-                          className="h-8 w-8"
-                        >
-                          <Heart 
-                            size={18} 
-                            className={track.isFavorite ? 'fill-meltin-pink text-meltin-pink' : ''} 
-                          />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openEditDialog(track)}
-                          className="h-8 w-8"
-                        >
-                          <Pencil size={18} />
-                        </Button>
+                        {track.title !== 'Discord Music Bot' && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => toggleFavorite(track.id)}
+                            className="h-8 w-8"
+                          >
+                            <Heart 
+                              size={18} 
+                              className={track.isFavorite ? 'fill-meltin-pink text-meltin-pink' : ''} 
+                            />
+                          </Button>
+                        )}
+                        {track.title === 'Discord Music Bot' ? (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={connectBot}
+                            className="h-8 w-8"
+                            title="Connect to Discord Bot"
+                          >
+                            <Bot size={18} />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => openEditDialog(track)}
+                            className="h-8 w-8"
+                          >
+                            <Pencil size={18} />
+                          </Button>
+                        )}
                         <Button 
                           variant="ghost" 
                           size="icon"
@@ -220,23 +274,23 @@ export const MusicPlayer = () => {
             <CardContent className="p-4 flex-grow flex flex-col">
               {currentTrack ? (
                 <>
-                  {currentTrack.embedCode ? (
-                    <div className="w-full mb-6">
-                      <div
-                        className="w-full rounded-lg overflow-hidden"
-                        dangerouslySetInnerHTML={{ __html: currentTrack.embedCode }}
-                      />
-                    </div>
-                  ) : (
-                    <div 
-                      className="w-40 h-40 md:w-48 md:h-48 rounded-lg bg-cover bg-center mb-6 shadow-xl animate-float mx-auto"
-                      style={{ backgroundImage: `url(${currentTrack.coverUrl})` }}
-                    />
-                  )}
+                  <TrackEmbed 
+                    embedCode={currentTrack.embedCode} 
+                    coverUrl={currentTrack.coverUrl}
+                    isPlaying={isPlaying}
+                    onEnd={nextTrack}
+                    onReady={() => console.log("Player ready")}
+                  />
                   
                   <div className="flex items-center gap-2 mb-1 justify-center">
                     <h3 className="font-bold text-xl text-center">{currentTrack.title}</h3>
-                    {getSourceIcon(currentTrack.source)}
+                    {currentTrack.title !== 'Discord Music Bot' && getSourceIcon(currentTrack.source)}
+                    {currentTrack.title === 'Discord Music Bot' && (
+                      <Badge variant="outline" className="bg-purple-500/20 text-purple-400">
+                        <Bot size={12} className="mr-1" />
+                        Bot
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-gray-400 text-center mb-6">{currentTrack.artist}</p>
                   
@@ -330,26 +384,35 @@ export const MusicPlayer = () => {
       }}>
         <DialogContent className="glass-card">
           <DialogHeader>
-            <DialogTitle>Add New Track</DialogTitle>
+            <DialogTitle>Add New Track or Bot</DialogTitle>
             <DialogDescription>
-              Paste a YouTube Music or Spotify link to add it to your playlist
+              Paste a YouTube Music, Spotify link, or Discord bot invite to add it to your playlist
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <Link size={18} className={inputUrl && validateMusicUrl(inputUrl) ? 
-                  (inputUrl.includes('youtube') ? 'text-red-500' : 'text-green-500') : 
-                  'text-muted-foreground'} 
-                />
+                {inputUrl && validateMusicUrl(inputUrl) ? (
+                  inputUrl.includes('youtube') ? (
+                    <Music size={18} className="text-red-500" />
+                  ) : inputUrl.includes('spotify') ? (
+                    <Music size={18} className="text-green-500" />
+                  ) : inputUrl.includes('discord') ? (
+                    <Bot size={18} className="text-purple-500" />
+                  ) : (
+                    <Link size={18} className="text-muted-foreground" />
+                  )
+                ) : (
+                  <Link size={18} className="text-muted-foreground" />
+                )}
               </div>
               <Input
-                placeholder="Paste YouTube Music or Spotify URL"
+                placeholder="Paste YouTube Music, Spotify URL, or Discord bot invite"
                 value={inputUrl}
                 onChange={(e) => {
                   setInputUrl(e.target.value);
                   if (e.target.value && !validateMusicUrl(e.target.value)) {
-                    setUrlError("Please enter a valid YouTube Music or Spotify URL");
+                    setUrlError("Please enter a valid YouTube Music, Spotify URL, or Discord bot invite");
                   } else {
                     setUrlError(null);
                   }
@@ -371,6 +434,10 @@ export const MusicPlayer = () => {
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="bg-green-500/10 text-green-500">Spotify</Badge>
                 <span className="text-xs truncate">https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-500">Discord Bot</Badge>
+                <span className="text-xs truncate">https://discord.gg/ba35vUk</span>
               </div>
             </div>
           </div>
