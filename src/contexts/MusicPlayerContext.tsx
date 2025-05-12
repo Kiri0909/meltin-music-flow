@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,16 +37,26 @@ const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(und
 
 // Function to determine content type from URL
 const getContentTypeFromUrl = (url: string): 'track' | 'album' | 'playlist' | 'artist' => {
+  // YouTube Music URLs
+  if (url.includes('music.youtube.com')) {
+    if (url.includes('/playlist?list=')) return 'playlist';
+    if (url.includes('/album?list=')) return 'album';
+    if (url.includes('/channel/')) return 'artist';
+    return 'track'; // Default for YouTube Music
+  }
+  
+  // Regular YouTube URLs
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    if (url.includes('list=')) return 'playlist';
+    return 'track'; // Default for YouTube is track
+  }
+  
+  // Spotify URLs
   if (url.includes('spotify.com')) {
     if (url.includes('/track/')) return 'track';
     if (url.includes('/album/')) return 'album';
     if (url.includes('/playlist/')) return 'playlist';
     if (url.includes('/artist/')) return 'artist';
-  }
-  
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    if (url.includes('list=')) return 'playlist';
-    return 'track'; // Default for YouTube is track
   }
   
   return 'track'; // Default is track
@@ -74,7 +85,7 @@ const generateEmbedCode = (url: string): string | undefined => {
       videoId = url.split('youtube.com/embed/')[1].split('?')[0];
     }
     
-    // Construct the embed URL
+    // Construct the embed URL - ensure full playlist support for YouTube Music
     if (playlistId) {
       // Embed a playlist (with optional starting video)
       embedUrl = videoId
@@ -150,20 +161,7 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
     embedCode,
     contentType
   };
-  
-  // Generate title based on content type
-  let title = 'Unknown Track';
-  let artist = 'Unknown Artist';
-  
-  if (contentType === 'album') {
-    title = isYoutube ? 'YouTube Album' : 'Spotify Album';
-  } else if (contentType === 'playlist') {
-    title = isYoutube ? 'YouTube Playlist' : 'Spotify Playlist';
-  } else if (contentType === 'artist') {
-    title = isSpotify ? 'Spotify Artist Profile' : 'YouTube Artist';
-    artist = title;
-  }
-  
+
   // Extract YouTube information
   if (isYoutube) {
     try {
@@ -184,11 +182,19 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
       }
       
       // Generate identifier for title
-      const idFirstChars = playlistId ? playlistId.substring(0, 3) : (videoId ? videoId.substring(0, 3) : '');
+      const idFirstChars = playlistId ? playlistId.substring(0, 5) : (videoId ? videoId.substring(0, 5) : '');
+      
+      let title, artist;
       
       if (contentType === 'playlist') {
-        title = `YouTube Playlist ${idFirstChars}`;
+        title = url.includes('music.youtube.com') ? `YouTube Music Playlist ${idFirstChars}` : `YouTube Playlist ${idFirstChars}`;
         artist = `Various Artists`;
+      } else if (contentType === 'album') {
+        title = `YouTube Music Album ${idFirstChars}`;
+        artist = `Album Artist ${idFirstChars}`;
+      } else if (contentType === 'artist') {
+        title = `YouTube Music Artist ${idFirstChars}`;
+        artist = title;
       } else {
         title = `YouTube Track ${idFirstChars}`;
         artist = `Artist ${idFirstChars}`;

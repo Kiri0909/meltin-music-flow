@@ -19,7 +19,6 @@ import {
   Link,
   Music,
   Album,
-  Playlist,
   Headphones
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -157,7 +156,7 @@ export const MusicPlayer = () => {
       case 'album':
         return <Album size={16} className="mr-1" />;
       case 'playlist':
-        return <Playlist size={16} className="mr-1" />;
+        return <Music2 size={16} className="mr-1" />;
       case 'artist':
         return <Headphones size={16} className="mr-1" />;
       default:
