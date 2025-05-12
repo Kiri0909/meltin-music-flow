@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +21,14 @@ import {
   Headphones,
   FileImage,
   DiscAlbum,
-  Image
+  Image,
+  X
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Badge } from "@/components/ui/badge";
 import TrackEmbed from './TrackEmbed';
+import { useToast } from "@/hooks/use-toast";
 
 // Function to extract a potential cover image from YouTube URL
 const getPreviewCoverForUrl = (url: string): string | null => {
@@ -93,6 +95,7 @@ export const MusicPlayer = () => {
     updateCoverImage
   } = useMusicPlayer();
 
+  const { toast } = useToast();
   const [progress, setProgress] = useState(0);
   const [inputUrl, setInputUrl] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -100,10 +103,10 @@ export const MusicPlayer = () => {
   const [isChangeCoverDialogOpen, setIsChangeCoverDialogOpen] = useState(false);
   const [currentEditTrack, setCurrentEditTrack] = useState<{id: string, title: string, artist: string} | null>(null);
   const [currentCoverTrack, setCurrentCoverTrack] = useState<{id: string, currentCover: string} | null>(null);
-  const [newCoverUrl, setNewCoverUrl] = useState('');
-  const [urlError, setUrlError] = useState<string | null>(null);
   const [previewCover, setPreviewCover] = useState<string | null>(null);
-  const [coverUrlError, setCoverUrlError] = useState<string | null>(null);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Simulate progress bar
   useEffect(() => {
@@ -153,26 +156,25 @@ export const MusicPlayer = () => {
     return ytMusicRegex.test(url) || spotifyRegex.test(url);
   };
 
-  const validateImageUrl = (url: string): boolean => {
-    if (!url) return false;
-    return url.match(/\.(jpeg|jpg|gif|png|webp)$/) !== null || 
-           url.includes('images.unsplash.com') ||
-           url.includes('scdn.co/image') ||
-           url.includes('i.ytimg.com');
-  };
-
   const handleAddTrack = async () => {
     if (!inputUrl) {
-      setUrlError("Please enter a URL");
+      toast({
+        title: "Error",
+        description: "Please enter a URL",
+        variant: "destructive"
+      });
       return;
     }
     
     if (!validateMusicUrl(inputUrl)) {
-      setUrlError("Please enter a valid YouTube or Spotify URL");
+      toast({
+        title: "Error",
+        description: "Please enter a valid YouTube or Spotify URL",
+        variant: "destructive"
+      });
       return;
     }
     
-    setUrlError(null);
     try {
       await addTrack(inputUrl);
       setInputUrl('');
@@ -209,22 +211,65 @@ export const MusicPlayer = () => {
       id: track.id,
       currentCover: track.coverUrl
     });
-    setNewCoverUrl('');
+    setSelectedImageFile(null);
+    setSelectedImagePreview(null);
     setIsChangeCoverDialogOpen(true);
   };
 
-  const handleChangeCover = () => {
-    if (!currentCoverTrack || !newCoverUrl) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
     
-    if (!validateImageUrl(newCoverUrl)) {
-      setCoverUrlError("Please enter a valid image URL");
+    // Check if file is an image
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file (JPEG, PNG, GIF, etc.)",
+        variant: "destructive"
+      });
       return;
     }
     
-    updateCoverImage(currentCoverTrack.id, newCoverUrl);
-    setIsChangeCoverDialogOpen(false);
-    setCurrentCoverTrack(null);
-    setNewCoverUrl('');
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Image file must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Create a preview
+    const objectUrl = URL.createObjectURL(file);
+    setSelectedImageFile(file);
+    setSelectedImagePreview(objectUrl);
+    
+    // Clean up object URL when component unmounts
+    return () => URL.revokeObjectURL(objectUrl);
+  };
+
+  const handleChangeCover = () => {
+    if (!currentCoverTrack || !selectedImageFile) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        // Use the data URL as the cover image
+        updateCoverImage(currentCoverTrack.id, e.target.result as string);
+        setIsChangeCoverDialogOpen(false);
+        setCurrentCoverTrack(null);
+        setSelectedImageFile(null);
+        setSelectedImagePreview(null);
+      }
+    };
+    reader.readAsDataURL(selectedImageFile);
+  };
+
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const getSourceIcon = (source: 'youtube' | 'spotify') => {
@@ -339,6 +384,14 @@ export const MusicPlayer = () => {
                             size={18} 
                             className={track.isFavorite ? 'fill-meltin-pink text-meltin-pink' : ''} 
                           />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openChangeCoverDialog(track)}
+                          className="h-8 w-8"
+                        >
+                          <Image size={18} />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -492,7 +545,6 @@ export const MusicPlayer = () => {
       <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
         setIsAddDialogOpen(open);
         if (!open) {
-          setUrlError(null);
           setInputUrl('');
           setPreviewCover(null);
         }
@@ -523,9 +575,11 @@ export const MusicPlayer = () => {
                 onChange={(e) => {
                   setInputUrl(e.target.value);
                   if (e.target.value && !validateMusicUrl(e.target.value)) {
-                    setUrlError("Please enter a valid YouTube or Spotify URL");
-                  } else {
-                    setUrlError(null);
+                    toast({
+                      title: "Error",
+                      description: "Please enter a valid YouTube or Spotify URL",
+                      variant: "destructive"
+                    });
                   }
                 }}
                 className="pl-10"
@@ -548,11 +602,6 @@ export const MusicPlayer = () => {
               </div>
             )}
             
-            {urlError && (
-              <p className="text-xs text-destructive">
-                {urlError}
-              </p>
-            )}
             <div className="text-xs text-muted-foreground space-y-1">
               <p className="font-medium">Supported formats:</p>
               <div className="flex items-center gap-2">
@@ -580,13 +629,12 @@ export const MusicPlayer = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setIsAddDialogOpen(false);
-              setUrlError(null);
               setInputUrl('');
               setPreviewCover(null);
             }}>Cancel</Button>
             <Button 
               onClick={handleAddTrack}
-              disabled={!inputUrl || !!urlError}
+              disabled={!inputUrl || !validateMusicUrl(inputUrl)}
               className="flex items-center gap-2"
             >
               <FileImage size={16} />
@@ -634,15 +682,15 @@ export const MusicPlayer = () => {
       <Dialog open={isChangeCoverDialogOpen} onOpenChange={(open) => {
         setIsChangeCoverDialogOpen(open);
         if (!open) {
-          setCoverUrlError(null);
-          setNewCoverUrl('');
+          setSelectedImageFile(null);
+          setSelectedImagePreview(null);
         }
       }}>
         <DialogContent className="glass-card">
           <DialogHeader>
             <DialogTitle>Change Cover Image</DialogTitle>
             <DialogDescription>
-              Enter a URL for the new cover image
+              Select an image from your device to use as cover art
             </DialogDescription>
           </DialogHeader>
           
@@ -662,96 +710,72 @@ export const MusicPlayer = () => {
               </div>
             )}
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">New Cover URL</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Image size={18} className="text-muted-foreground" />
-                </div>
-                <Input
-                  placeholder="https://example.com/image.jpg"
-                  value={newCoverUrl}
-                  onChange={(e) => {
-                    setNewCoverUrl(e.target.value);
-                    setCoverUrlError(null);
-                  }}
-                  className="pl-10"
-                />
+            <div className="space-y-4">
+              {/* Hidden file input */}
+              <input 
+                ref={fileInputRef}
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handleFileChange}
+              />
+              
+              {/* Custom upload button */}
+              <div className="flex flex-col items-center gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={triggerFileInput}
+                  className="w-full h-20 border-dashed border-2 flex flex-col items-center justify-center gap-2"
+                >
+                  <FileImage size={24} className="text-primary/70" />
+                  <span className="text-sm">Click to browse for an image</span>
+                </Button>
+                
+                <p className="text-xs text-muted-foreground text-center">
+                  Supported formats: JPEG, PNG, GIF, WebP<br />
+                  Max file size: 5MB
+                </p>
               </div>
               
-              {coverUrlError && (
-                <p className="text-xs text-destructive">
-                  {coverUrlError}
-                </p>
-              )}
-              
-              {newCoverUrl && validateImageUrl(newCoverUrl) && (
-                <div className="flex justify-center py-2">
+              {/* Preview of selected image */}
+              {selectedImagePreview && (
+                <div className="flex flex-col items-center gap-2 mt-4">
                   <div className="relative">
                     <img 
-                      src={newCoverUrl} 
-                      alt="New Cover"
-                      className="w-32 h-32 object-cover rounded-md shadow-md"
-                      onError={() => setCoverUrlError("Invalid image URL or image cannot be loaded")}
+                      src={selectedImagePreview} 
+                      alt="Selected Cover" 
+                      className="w-40 h-40 object-cover rounded-lg shadow-md"
                     />
-                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all rounded-md">
-                      <p className="text-white text-xs">New Cover</p>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute top-2 right-2 h-6 w-6 bg-black/60 border-none text-white hover:bg-black/80 rounded-full"
+                      onClick={() => {
+                        setSelectedImageFile(null);
+                        setSelectedImagePreview(null);
+                        if (fileInputRef.current) {
+                          fileInputRef.current.value = '';
+                        }
+                      }}
+                    >
+                      <X size={14} />
+                    </Button>
                   </div>
+                  <p className="text-sm font-medium">New Cover</p>
                 </div>
               )}
-              
-              <p className="text-xs text-muted-foreground">
-                Enter the URL of an image to use as the new cover. Supported formats: JPEG, PNG, GIF, WEBP.
-              </p>
-              
-              <div className="grid grid-cols-3 gap-2 mt-4">
-                <Button 
-                  variant="outline" 
-                  className="h-16 p-0 overflow-hidden" 
-                  onClick={() => setNewCoverUrl("https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05")}
-                >
-                  <img 
-                    src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=100&h=100&auto=format&fit=crop&crop=center" 
-                    alt="Foggy mountains"
-                    className="w-full h-full object-cover"
-                  />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-16 p-0 overflow-hidden" 
-                  onClick={() => setNewCoverUrl("https://images.unsplash.com/photo-1493962853295-0fd70327578a")}
-                >
-                  <img 
-                    src="https://images.unsplash.com/photo-1493962853295-0fd70327578a?w=100&h=100&auto=format&fit=crop&crop=center" 
-                    alt="Brown ox on mountain"
-                    className="w-full h-full object-cover"
-                  />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-16 p-0 overflow-hidden" 
-                  onClick={() => setNewCoverUrl("https://images.unsplash.com/photo-1486718448742-163732cd1544")}
-                >
-                  <img 
-                    src="https://images.unsplash.com/photo-1486718448742-163732cd1544?w=100&h=100&auto=format&fit=crop&crop=center" 
-                    alt="Abstract structure"
-                    className="w-full h-full object-cover"
-                  />
-                </Button>
-              </div>
             </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setIsChangeCoverDialogOpen(false);
-              setCoverUrlError(null);
-              setNewCoverUrl('');
+              setSelectedImageFile(null);
+              setSelectedImagePreview(null);
             }}>Cancel</Button>
             <Button 
               onClick={handleChangeCover}
-              disabled={!newCoverUrl}
+              disabled={!selectedImageFile}
               className="flex items-center gap-2"
             >
               <FileImage size={16} />
@@ -760,6 +784,13 @@ export const MusicPlayer = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Hidden file input for global use */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        className="hidden" 
+      />
     </div>
   );
 };
