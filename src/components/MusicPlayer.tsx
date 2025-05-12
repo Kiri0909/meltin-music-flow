@@ -376,6 +376,7 @@ export const MusicPlayer = () => {
                       isPlaying={isPlaying}
                       onEnd={nextTrack}
                       onReady={() => console.log("Player ready")}
+                      onChangeCover={() => openChangeCoverDialog(currentTrack)}
                     />
                     
                     {!currentTrack.embedCode && (

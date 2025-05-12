@@ -1,6 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
-import { DiscAlbum } from "lucide-react";
+import { DiscAlbum, Image } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface TrackEmbedProps {
   embedCode: string | undefined;
@@ -8,6 +9,7 @@ interface TrackEmbedProps {
   isPlaying: boolean;
   onReady?: () => void;
   onEnd?: () => void;
+  onChangeCover?: () => void; // New prop for handling cover change
 }
 
 const TrackEmbed: React.FC<TrackEmbedProps> = ({ 
@@ -15,7 +17,8 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({
   coverUrl, 
   isPlaying, 
   onReady, 
-  onEnd 
+  onEnd,
+  onChangeCover
 }) => {
   const embedRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
@@ -79,6 +82,18 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({
           <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             <DiscAlbum className="w-12 h-12 text-white opacity-80" />
           </div>
+          
+          {/* Add image attachment button */}
+          {onChangeCover && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onChangeCover}
+              className="absolute bottom-2 right-2 h-8 w-8 rounded-full bg-black/50 hover:bg-black/70 border border-white/20"
+            >
+              <Image size={16} className="text-white" />
+            </Button>
+          )}
         </div>
       </div>
     );
