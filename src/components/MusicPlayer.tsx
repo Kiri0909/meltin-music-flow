@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,12 +18,58 @@ import {
   Link,
   Music,
   Album,
-  Headphones
+  Headphones,
+  FileImage,
+  DiscAlbum
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
 import { Badge } from "@/components/ui/badge";
 import TrackEmbed from './TrackEmbed';
+
+// Function to extract a potential cover image from YouTube URL
+const getPreviewCoverForUrl = (url: string): string | null => {
+  // If not a valid URL, return null
+  if (!url || (!url.includes('youtube') && !url.includes('spotify'))) {
+    return null;
+  }
+  
+  // For YouTube, try to extract video ID for thumbnail
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    let videoId = '';
+    
+    // Extract YouTube video ID
+    if (url.includes('watch?v=')) {
+      videoId = url.split('watch?v=')[1].split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+    }
+    
+    if (videoId) {
+      return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+    }
+    
+    // For playlists without a video ID, return a music-themed image
+    if (url.includes('list=')) {
+      return 'https://i.ytimg.com/vi_webp/qOOqQ3m_awA/maxresdefault.webp';
+    }
+  }
+  
+  // For Spotify links, return a generic Spotify cover based on content type
+  if (url.includes('spotify.com')) {
+    if (url.includes('/track/')) {
+      return 'https://i.scdn.co/image/ab67616d0000b273608140c63299dfde25527028';
+    } else if (url.includes('/album/')) {
+      return 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36';
+    } else if (url.includes('/playlist/')) {
+      return 'https://i.scdn.co/image/ab67706f000000033f861d7f7b4fccd5a186f7bb';
+    } else if (url.includes('/artist/')) {
+      return 'https://i.scdn.co/image/ab6761610000e5ebb894ef9fa437b0389c5567cc';
+    }
+  }
+  
+  return null;
+};
 
 export const MusicPlayer = () => {
   const { 
@@ -52,6 +97,7 @@ export const MusicPlayer = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentEditTrack, setCurrentEditTrack] = useState<{id: string, title: string, artist: string} | null>(null);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [previewCover, setPreviewCover] = useState<string | null>(null);
 
   // Simulate progress bar
   useEffect(() => {
@@ -72,6 +118,16 @@ export const MusicPlayer = () => {
     
     return () => clearInterval(interval);
   }, [isPlaying, nextTrack]);
+
+  // Update preview cover whenever URL changes
+  useEffect(() => {
+    if (inputUrl) {
+      const cover = getPreviewCoverForUrl(inputUrl);
+      setPreviewCover(cover);
+    } else {
+      setPreviewCover(null);
+    }
+  }, [inputUrl]);
 
   const handlePlayPause = () => {
     if (tracks.length === 0) return;
@@ -106,6 +162,7 @@ export const MusicPlayer = () => {
     try {
       await addTrack(inputUrl);
       setInputUrl('');
+      setPreviewCover(null);
       setIsAddDialogOpen(false);
     } catch (error) {
       // Error is already handled in the context with toast
@@ -380,6 +437,7 @@ export const MusicPlayer = () => {
         if (!open) {
           setUrlError(null);
           setInputUrl('');
+          setPreviewCover(null);
         }
       }}>
         <DialogContent className="glass-card">
@@ -416,6 +474,23 @@ export const MusicPlayer = () => {
                 className="pl-10"
               />
             </div>
+            
+            {/* Preview Cover Image */}
+            {previewCover && validateMusicUrl(inputUrl) && (
+              <div className="flex justify-center py-2">
+                <div className="relative group">
+                  <img 
+                    src={previewCover} 
+                    alt="Preview" 
+                    className="w-24 h-24 object-cover rounded-md shadow-md"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 flex items-center justify-center transition-all rounded-md">
+                    <DiscAlbum className="text-white opacity-0 group-hover:opacity-80 w-8 h-8" />
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {urlError && (
               <p className="text-xs text-destructive">
                 {urlError}
@@ -450,11 +525,14 @@ export const MusicPlayer = () => {
               setIsAddDialogOpen(false);
               setUrlError(null);
               setInputUrl('');
+              setPreviewCover(null);
             }}>Cancel</Button>
             <Button 
               onClick={handleAddTrack}
               disabled={!inputUrl || !!urlError}
+              className="flex items-center gap-2"
             >
+              <FileImage size={16} />
               Add Music
             </Button>
           </DialogFooter>

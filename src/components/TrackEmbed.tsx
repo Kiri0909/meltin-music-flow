@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
+import { DiscAlbum } from "lucide-react";
 
 interface TrackEmbedProps {
   embedCode: string | undefined;
@@ -70,10 +71,16 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({
 
   if (!embedCode) {
     return (
-      <div 
-        className="w-40 h-40 md:w-48 md:h-48 rounded-lg bg-cover bg-center mb-6 shadow-xl animate-float mx-auto"
-        style={{ backgroundImage: `url(${coverUrl})` }}
-      />
+      <div className="relative flex flex-col items-center justify-center">
+        <div 
+          className="w-40 h-40 md:w-48 md:h-48 rounded-lg bg-cover bg-center mb-6 shadow-xl animate-float mx-auto relative overflow-hidden"
+          style={{ backgroundImage: `url(${coverUrl})` }}
+        >
+          <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+            <DiscAlbum className="w-12 h-12 text-white opacity-80" />
+          </div>
+        </div>
+      </div>
     );
   }
 

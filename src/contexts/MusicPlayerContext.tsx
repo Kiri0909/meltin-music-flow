@@ -62,6 +62,66 @@ const getContentTypeFromUrl = (url: string): 'track' | 'album' | 'playlist' | 'a
   return 'track'; // Default is track
 };
 
+// Function to extract cover image from YouTube URL
+const extractYouTubeCover = (url: string): string => {
+  let videoId = '';
+  let playlistId = '';
+  
+  // Extract video ID from different URL formats
+  if (url.includes('watch?v=')) {
+    videoId = url.split('watch?v=')[1].split('&')[0];
+  } else if (url.includes('youtu.be/')) {
+    videoId = url.split('youtu.be/')[1].split('?')[0];
+  } else if (url.includes('youtube.com/embed/')) {
+    videoId = url.split('youtube.com/embed/')[1].split('?')[0];
+  }
+  
+  // Extract playlist ID if present
+  const playlistMatch = url.match(/[?&]list=([^&]+)/);
+  if (playlistMatch) {
+    playlistId = playlistMatch[1];
+  }
+  
+  // Return video thumbnail if available
+  if (videoId) {
+    // Use higher quality thumbnail (maxresdefault) with fallback to standard quality
+    return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+  }
+  
+  // For playlists without a specific video, use a generic music cover
+  if (playlistId) {
+    // For YouTube Music playlists, we can't get a direct thumbnail without an API
+    // So we use a music-themed placeholder
+    return 'https://i.ytimg.com/vi_webp/qOOqQ3m_awA/maxresdefault.webp';
+  }
+  
+  return 'https://i.ytimg.com/vi/default/hqdefault.jpg'; // Default YouTube thumbnail
+};
+
+// Function to extract Spotify ID from URL
+const extractSpotifyId = (url: string, type: 'track' | 'album' | 'playlist' | 'artist'): string => {
+  let regex;
+  switch (type) {
+    case 'track':
+      regex = /\/track\/([a-zA-Z0-9]+)/;
+      break;
+    case 'album':
+      regex = /\/album\/([a-zA-Z0-9]+)/;
+      break;
+    case 'playlist':
+      regex = /\/playlist\/([a-zA-Z0-9]+)/;
+      break;
+    case 'artist':
+      regex = /\/artist\/([a-zA-Z0-9]+)/;
+      break;
+    default:
+      return '';
+  }
+  
+  const match = url.match(regex);
+  return match ? match[1] : '';
+};
+
 // Function to generate embed code based on the URL
 const generateEmbedCode = (url: string): string | undefined => {
   // For YouTube Music or regular YouTube
@@ -200,13 +260,14 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
         artist = `Artist ${idFirstChars}`;
       }
       
+      // Get cover image from YouTube
+      const coverUrl = extractYouTubeCover(url);
+      
       extractedData = {
         ...extractedData,
         title,
         artist,
-        coverUrl: videoId 
-          ? `https://img.youtube.com/vi/${videoId}/0.jpg` 
-          : 'https://i.ytimg.com/vi/default/hqdefault.jpg' // Default YouTube thumbnail
+        coverUrl
       };
     } catch (e) {
       console.error('Failed to extract YouTube data', e);
@@ -217,10 +278,13 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
   if (isSpotify) {
     try {
       let contentId = '';
+      let title = '';
+      let artist = '';
       
       // Extract appropriate ID based on content type
       if (url.includes('/track/')) {
         contentId = url.split('/track/')[1].split('?')[0];
+        title = 'Spotify Track';
       } else if (url.includes('/album/')) {
         contentId = url.split('/album/')[1].split('?')[0];
         title = 'Spotify Album';
@@ -252,14 +316,26 @@ const generateMockData = (url: string): Partial<Track> & { embedCode?: string } 
           artist = title;
         }
         
-        // Default Spotify album art
-        const defaultCover = 'https://i.scdn.co/image/ab67616d0000b273608140c63299dfde25527028';
+        // Create a Spotify cover URL using the ID
+        // For actual Spotify covers, you would need to use their API
+        // For now, we use consistent covers based on content type
+        let coverUrl = '';
+        
+        if (contentType === 'track') {
+          coverUrl = 'https://i.scdn.co/image/ab67616d0000b273608140c63299dfde25527028';
+        } else if (contentType === 'album') {
+          coverUrl = 'https://i.scdn.co/image/ab67616d0000b2738863bc11d2aa12b54f5aeb36';
+        } else if (contentType === 'playlist') {
+          coverUrl = 'https://i.scdn.co/image/ab67706f000000033f861d7f7b4fccd5a186f7bb';
+        } else if (contentType === 'artist') {
+          coverUrl = 'https://i.scdn.co/image/ab6761610000e5ebb894ef9fa437b0389c5567cc';
+        }
         
         extractedData = {
           ...extractedData,
           title,
           artist,
-          coverUrl: defaultCover
+          coverUrl
         };
       }
     } catch (e) {
