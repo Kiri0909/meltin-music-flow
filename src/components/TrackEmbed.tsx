@@ -101,14 +101,14 @@ const TrackEmbed: React.FC<TrackEmbedProps> = ({
   }
   
   if (isYouTubePlaylist) {
-    aspectRatioClass = 'aspect-[16/10]'; // slightly taller for YT playlists
+    aspectRatioClass = 'aspect-[16/10] md:aspect-[16/9]'; // properly sized for YT playlists
   }
 
   return (
     <div className="w-full mb-6">
       <div
         ref={embedRef}
-        className={`w-full rounded-lg overflow-hidden ${aspectRatioClass}`}
+        className={`w-full rounded-lg overflow-hidden shadow-lg ${aspectRatioClass}`}
         dangerouslySetInnerHTML={{ __html: embedCode }}
       />
     </div>

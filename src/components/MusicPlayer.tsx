@@ -20,7 +20,8 @@ import {
   Album,
   Headphones,
   FileImage,
-  DiscAlbum
+  DiscAlbum,
+  Image
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useMusicPlayer } from '@/contexts/MusicPlayerContext';
@@ -88,16 +89,21 @@ export const MusicPlayer = () => {
     prevTrack,
     toggleFavorite,
     toggleLoop,
-    toggleShuffle
+    toggleShuffle,
+    updateCoverImage
   } = useMusicPlayer();
 
   const [progress, setProgress] = useState(0);
   const [inputUrl, setInputUrl] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isChangeCoverDialogOpen, setIsChangeCoverDialogOpen] = useState(false);
   const [currentEditTrack, setCurrentEditTrack] = useState<{id: string, title: string, artist: string} | null>(null);
+  const [currentCoverTrack, setCurrentCoverTrack] = useState<{id: string, currentCover: string} | null>(null);
+  const [newCoverUrl, setNewCoverUrl] = useState('');
   const [urlError, setUrlError] = useState<string | null>(null);
   const [previewCover, setPreviewCover] = useState<string | null>(null);
+  const [coverUrlError, setCoverUrlError] = useState<string | null>(null);
 
   // Simulate progress bar
   useEffect(() => {
@@ -147,6 +153,14 @@ export const MusicPlayer = () => {
     return ytMusicRegex.test(url) || spotifyRegex.test(url);
   };
 
+  const validateImageUrl = (url: string): boolean => {
+    if (!url) return false;
+    return url.match(/\.(jpeg|jpg|gif|png|webp)$/) !== null || 
+           url.includes('images.unsplash.com') ||
+           url.includes('scdn.co/image') ||
+           url.includes('i.ytimg.com');
+  };
+
   const handleAddTrack = async () => {
     if (!inputUrl) {
       setUrlError("Please enter a URL");
@@ -188,6 +202,29 @@ export const MusicPlayer = () => {
       artist: track.artist
     });
     setIsEditDialogOpen(true);
+  };
+
+  const openChangeCoverDialog = (track: typeof tracks[0]) => {
+    setCurrentCoverTrack({
+      id: track.id,
+      currentCover: track.coverUrl
+    });
+    setNewCoverUrl('');
+    setIsChangeCoverDialogOpen(true);
+  };
+
+  const handleChangeCover = () => {
+    if (!currentCoverTrack || !newCoverUrl) return;
+    
+    if (!validateImageUrl(newCoverUrl)) {
+      setCoverUrlError("Please enter a valid image URL");
+      return;
+    }
+    
+    updateCoverImage(currentCoverTrack.id, newCoverUrl);
+    setIsChangeCoverDialogOpen(false);
+    setCurrentCoverTrack(null);
+    setNewCoverUrl('');
   };
 
   const getSourceIcon = (source: 'youtube' | 'spotify') => {
@@ -268,9 +305,14 @@ export const MusicPlayer = () => {
                         }`}
                     >
                       <div 
-                        className="w-12 h-12 rounded bg-cover bg-center shrink-0"
+                        className="w-12 h-12 rounded bg-cover bg-center shrink-0 relative group cursor-pointer"
                         style={{ backgroundImage: `url(${track.coverUrl})` }}
-                      />
+                        onClick={() => openChangeCoverDialog(track)}
+                      >
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all rounded">
+                          <Image size={16} className="text-white" />
+                        </div>
+                      </div>
                       <div className="flex-grow min-w-0" onClick={() => playTrack(index)}>
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium truncate">{track.title}</h3>
@@ -327,13 +369,27 @@ export const MusicPlayer = () => {
             <CardContent className="p-4 flex-grow flex flex-col">
               {currentTrack ? (
                 <>
-                  <TrackEmbed 
-                    embedCode={currentTrack.embedCode} 
-                    coverUrl={currentTrack.coverUrl}
-                    isPlaying={isPlaying}
-                    onEnd={nextTrack}
-                    onReady={() => console.log("Player ready")}
-                  />
+                  <div className="relative">
+                    <TrackEmbed 
+                      embedCode={currentTrack.embedCode} 
+                      coverUrl={currentTrack.coverUrl}
+                      isPlaying={isPlaying}
+                      onEnd={nextTrack}
+                      onReady={() => console.log("Player ready")}
+                    />
+                    
+                    {!currentTrack.embedCode && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2 flex items-center gap-1 bg-black/50 text-white border-white/20 hover:bg-black/70"
+                        onClick={() => openChangeCoverDialog(currentTrack)}
+                      >
+                        <Image size={14} />
+                        <span className="text-xs">Change Cover</span>
+                      </Button>
+                    )}
+                  </div>
                   
                   <div className="flex flex-col items-center gap-2 mb-1">
                     <div className="flex items-center gap-2 justify-center">
@@ -569,6 +625,137 @@ export const MusicPlayer = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleEditTrack}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Cover Image Dialog */}
+      <Dialog open={isChangeCoverDialogOpen} onOpenChange={(open) => {
+        setIsChangeCoverDialogOpen(open);
+        if (!open) {
+          setCoverUrlError(null);
+          setNewCoverUrl('');
+        }
+      }}>
+        <DialogContent className="glass-card">
+          <DialogHeader>
+            <DialogTitle>Change Cover Image</DialogTitle>
+            <DialogDescription>
+              Enter a URL for the new cover image
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {currentCoverTrack && (
+              <div className="flex items-center justify-center mb-4">
+                <div className="relative">
+                  <img 
+                    src={currentCoverTrack.currentCover} 
+                    alt="Current Cover" 
+                    className="w-32 h-32 object-cover rounded-md shadow-md"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all rounded-md">
+                    <p className="text-white text-xs">Current Cover</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">New Cover URL</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Image size={18} className="text-muted-foreground" />
+                </div>
+                <Input
+                  placeholder="https://example.com/image.jpg"
+                  value={newCoverUrl}
+                  onChange={(e) => {
+                    setNewCoverUrl(e.target.value);
+                    setCoverUrlError(null);
+                  }}
+                  className="pl-10"
+                />
+              </div>
+              
+              {coverUrlError && (
+                <p className="text-xs text-destructive">
+                  {coverUrlError}
+                </p>
+              )}
+              
+              {newCoverUrl && validateImageUrl(newCoverUrl) && (
+                <div className="flex justify-center py-2">
+                  <div className="relative">
+                    <img 
+                      src={newCoverUrl} 
+                      alt="New Cover"
+                      className="w-32 h-32 object-cover rounded-md shadow-md"
+                      onError={() => setCoverUrlError("Invalid image URL or image cannot be loaded")}
+                    />
+                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-all rounded-md">
+                      <p className="text-white text-xs">New Cover</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <p className="text-xs text-muted-foreground">
+                Enter the URL of an image to use as the new cover. Supported formats: JPEG, PNG, GIF, WEBP.
+              </p>
+              
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                <Button 
+                  variant="outline" 
+                  className="h-16 p-0 overflow-hidden" 
+                  onClick={() => setNewCoverUrl("https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05")}
+                >
+                  <img 
+                    src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=100&h=100&auto=format&fit=crop&crop=center" 
+                    alt="Foggy mountains"
+                    className="w-full h-full object-cover"
+                  />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-16 p-0 overflow-hidden" 
+                  onClick={() => setNewCoverUrl("https://images.unsplash.com/photo-1493962853295-0fd70327578a")}
+                >
+                  <img 
+                    src="https://images.unsplash.com/photo-1493962853295-0fd70327578a?w=100&h=100&auto=format&fit=crop&crop=center" 
+                    alt="Brown ox on mountain"
+                    className="w-full h-full object-cover"
+                  />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="h-16 p-0 overflow-hidden" 
+                  onClick={() => setNewCoverUrl("https://images.unsplash.com/photo-1486718448742-163732cd1544")}
+                >
+                  <img 
+                    src="https://images.unsplash.com/photo-1486718448742-163732cd1544?w=100&h=100&auto=format&fit=crop&crop=center" 
+                    alt="Abstract structure"
+                    className="w-full h-full object-cover"
+                  />
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setIsChangeCoverDialogOpen(false);
+              setCoverUrlError(null);
+              setNewCoverUrl('');
+            }}>Cancel</Button>
+            <Button 
+              onClick={handleChangeCover}
+              disabled={!newCoverUrl}
+              className="flex items-center gap-2"
+            >
+              <FileImage size={16} />
+              Update Cover
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

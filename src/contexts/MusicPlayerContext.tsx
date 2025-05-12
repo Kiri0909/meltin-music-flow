@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +30,7 @@ type MusicPlayerContextType = {
   toggleFavorite: (id: string) => void;
   toggleLoop: () => void;
   toggleShuffle: () => void;
+  updateCoverImage: (id: string, coverUrl: string) => void; // New function to update cover image
 };
 
 const MusicPlayerContext = createContext<MusicPlayerContextType | undefined>(undefined);
@@ -502,6 +502,20 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
     });
   };
 
+  const updateCoverImage = (id: string, coverUrl: string) => {
+    if (!coverUrl) return;
+    
+    setTracks(prev => 
+      prev.map(track => 
+        track.id === id ? { ...track, coverUrl } : track
+      )
+    );
+    toast({
+      title: "Cover Image Updated",
+      description: "Your music cover has been updated successfully",
+    });
+  };
+
   const removeTrack = (id: string) => {
     const trackToRemove = tracks.find(track => track.id === id);
     const trackIndex = tracks.findIndex(track => track.id === id);
@@ -620,7 +634,8 @@ export const MusicPlayerProvider = ({ children }: { children: React.ReactNode })
       prevTrack,
       toggleFavorite,
       toggleLoop,
-      toggleShuffle
+      toggleShuffle,
+      updateCoverImage
     }}>
       {children}
     </MusicPlayerContext.Provider>
