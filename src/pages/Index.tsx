@@ -5,6 +5,7 @@ import LoginForm from '@/components/LoginForm';
 import Navbar from '@/components/Navbar';
 import MusicPlayer from '@/components/MusicPlayer';
 import FeedbackButton from '@/components/FeedbackButton';
+import SilverwolfBot from '@/components/SilverwolfBot';
 
 const Index = () => {
   const { isAuthenticated } = useAuth();
@@ -22,7 +23,7 @@ const Index = () => {
         </div>
         <footer className="text-center py-4 text-sm text-gray-500 flex justify-between items-center container mx-auto px-4">
           <div className="text-left">
-            <p>Developer By: KiriKaslana</p>
+            <p>Developer By: recorrect it</p>
           </div>
           <div>
             <p>© 2025 Meltine Music</p>
@@ -39,9 +40,10 @@ const Index = () => {
         <MusicPlayer />
       </main>
       <FeedbackButton />
+      <SilverwolfBot />
       <footer className="text-center py-4 text-sm text-gray-500 flex justify-between items-center container mx-auto px-4">
         <div className="text-left">
-          <p>Developer By: KiriKaslana</p>
+          <p>Developer By: recorrect it</p>
         </div>
         <div>
           <p>© 2025 Meltine Music</p>

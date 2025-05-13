@@ -325,10 +325,19 @@ export const MusicPlayer = () => {
           </div>
         </div>
         
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
+        {/* Main Content Area - Starry Night Theme */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow relative">
+          {/* Background Image for Starry Night Theme */}
+          <div className="absolute inset-0 -z-10 opacity-20 rounded-xl overflow-hidden">
+            <img 
+              src="/lovable-uploads/3281c2c1-fcd3-43e4-80d1-09267cee70af.png" 
+              alt="Starry Night Background" 
+              className="w-full h-full object-cover"
+            />
+          </div>
+          
           {/* Playlist Section */}
-          <Card className="glass-card overflow-hidden">
+          <Card className="glass-card overflow-hidden backdrop-blur-lg bg-black/40">
             <CardContent className="p-4 h-full">
               {tracks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center p-8 animate-float">
@@ -339,14 +348,14 @@ export const MusicPlayer = () => {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2 overflow-y-auto pr-2 max-h-[50vh]">
+                <div className="space-y-2 overflow-y-auto pr-2 max-h-[50vh] scrollbar-none">
                   {tracks.map((track, index) => (
                     <div 
                       key={track.id}
                       className={`flex items-center p-2 rounded-lg transition-all duration-300 gap-3
                         ${currentTrackIndex === index ? 
-                          'bg-meltin-purple/20 shadow-md animate-pulse-glow' : 
-                          'hover:bg-white/5'
+                          'bg-meltin-purple/30 shadow-lg shadow-meltin-purple/20 animate-pulse-glow' : 
+                          'hover:bg-white/10'
                         }`}
                     >
                       <div 
@@ -417,12 +426,12 @@ export const MusicPlayer = () => {
             </CardContent>
           </Card>
           
-          {/* Now Playing Section */}
-          <Card className="glass-card overflow-hidden flex flex-col">
+          {/* Now Playing Section - Enhanced with Starry Night Theme */}
+          <Card className="glass-card overflow-hidden flex flex-col backdrop-blur-lg bg-black/40">
             <CardContent className="p-4 flex-grow flex flex-col">
               {currentTrack ? (
                 <>
-                  <div className="relative">
+                  <div className="relative rounded-xl overflow-hidden mb-4">
                     <TrackEmbed 
                       embedCode={currentTrack.embedCode} 
                       coverUrl={currentTrack.coverUrl}
@@ -443,6 +452,9 @@ export const MusicPlayer = () => {
                         <span className="text-xs">Change Cover</span>
                       </Button>
                     )}
+                    
+                    {/* Starry Night overlay effect */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
                   </div>
                   
                   <div className="flex flex-col items-center gap-2 mb-1">
@@ -478,7 +490,16 @@ export const MusicPlayer = () => {
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center text-center p-8 animate-float">
-                  <Music2 size={48} className="mb-4 text-meltin-purple opacity-70" />
+                  <div className="relative w-full h-40 mb-4 overflow-hidden rounded-lg">
+                    <img 
+                      src="/lovable-uploads/3281c2c1-fcd3-43e4-80d1-09267cee70af.png" 
+                      alt="Starry Night" 
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                      <Music2 size={48} className="text-meltin-purple opacity-70" />
+                    </div>
+                  </div>
                   <h3 className="text-xl font-medium">No music playing</h3>
                   <p className="text-sm text-gray-400 mt-2">
                     Select a track, album, playlist, or artist from your collection to start listening
@@ -486,13 +507,13 @@ export const MusicPlayer = () => {
                 </div>
               )}
 
-              {/* Player Controls */}
-              <div className="flex items-center justify-center gap-2 mt-auto">
+              {/* Player Controls - Enhanced with Glowing Effect */}
+              <div className="flex items-center justify-center gap-2 mt-auto pt-4 bg-gradient-to-t from-black/30 to-transparent">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={toggleShuffle}
-                  className={`control-button ${isShuffle ? 'bg-meltin-purple/30 text-meltin-purple' : ''}`}
+                  className={`control-button ${isShuffle ? 'bg-meltin-purple/30 text-white shadow shadow-meltin-purple/20' : ''}`}
                 >
                   <Shuffle size={20} />
                 </Button>
@@ -502,7 +523,7 @@ export const MusicPlayer = () => {
                   size="icon"
                   onClick={prevTrack}
                   disabled={tracks.length === 0}
-                  className="control-button"
+                  className="control-button hover:bg-white/10"
                 >
                   <SkipBack size={24} />
                 </Button>
@@ -512,7 +533,7 @@ export const MusicPlayer = () => {
                   size="icon"
                   onClick={handlePlayPause}
                   disabled={tracks.length === 0}
-                  className={`control-button ${isPlaying ? '' : 'play-button'} w-12 h-12`}
+                  className={`control-button ${isPlaying ? 'bg-meltin-purple/40 border-meltin-purple' : 'play-button shadow-lg shadow-meltin-purple/30'} w-12 h-12 rounded-full`}
                 >
                   {isPlaying ? <Pause size={24} /> : <Play size={24} />}
                 </Button>
@@ -522,7 +543,7 @@ export const MusicPlayer = () => {
                   size="icon"
                   onClick={nextTrack}
                   disabled={tracks.length === 0}
-                  className="control-button"
+                  className="control-button hover:bg-white/10"
                 >
                   <SkipForward size={24} />
                 </Button>
@@ -531,7 +552,7 @@ export const MusicPlayer = () => {
                   variant="ghost"
                   size="icon"
                   onClick={toggleLoop}
-                  className={`control-button ${isLooping ? 'bg-meltin-purple/30 text-meltin-purple' : ''}`}
+                  className={`control-button ${isLooping ? 'bg-meltin-purple/30 text-white shadow shadow-meltin-purple/20' : ''}`}
                 >
                   <Repeat size={20} />
                 </Button>
