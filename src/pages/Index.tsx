@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import LoginForm from '@/components/LoginForm';
 import Navbar from '@/components/Navbar';
 import MusicPlayer from '@/components/MusicPlayer';
+import FeedbackButton from '@/components/FeedbackButton';
 
 const Index = () => {
   const { isAuthenticated } = useAuth();
@@ -32,6 +33,7 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8 flex-grow">
         <MusicPlayer />
       </main>
+      <FeedbackButton />
       <footer className="text-center py-4 text-sm text-gray-500">
         <p>© 2025 MeltIn Music</p>
       </footer>

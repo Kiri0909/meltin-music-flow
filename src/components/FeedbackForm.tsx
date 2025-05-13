@@ -2,15 +2,16 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useFeedbackStore } from '@/stores/feedbackStore';
 
 export const FeedbackForm = () => {
-  const [feedbackType, setFeedbackType] = useState('');
+  const [feedbackType, setFeedbackType] = useState<'bug' | 'suggestion' | 'comment' | ''>('');
   const [feedbackText, setFeedbackText] = useState('');
   const { toast } = useToast();
+  const { addFeedback } = useFeedbackStore();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +25,14 @@ export const FeedbackForm = () => {
       return;
     }
     
-    // In a real app, this would send the feedback to a backend
+    // Save to feedback store
+    addFeedback({
+      type: feedbackType,
+      text: feedbackText,
+      timestamp: Date.now()
+    });
+    
+    // In a real app, this would also send the feedback to a backend
     console.log('Feedback submitted:', { type: feedbackType, feedback: feedbackText });
     
     toast({
@@ -46,7 +54,10 @@ export const FeedbackForm = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Feedback Type</label>
-            <Select value={feedbackType} onValueChange={setFeedbackType}>
+            <Select 
+              value={feedbackType} 
+              onValueChange={(value) => setFeedbackType(value as 'bug' | 'suggestion' | 'comment')}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select feedback type" />
               </SelectTrigger>

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import Navbar from '@/components/Navbar';
 import LoginHistory from '@/components/LoginHistory';
 import FeedbackForm from '@/components/FeedbackForm';
+import FeedbackHistory from '@/components/FeedbackHistory';
 import { Moon, Sun } from 'lucide-react';
 
 const Settings = () => {
@@ -180,7 +181,10 @@ const Settings = () => {
             </TabsContent>
             
             <TabsContent value="feedback">
-              <FeedbackForm />
+              <div className="space-y-6">
+                <FeedbackForm />
+                <FeedbackHistory />
+              </div>
             </TabsContent>
           </Tabs>
         </div>
