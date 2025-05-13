@@ -14,14 +14,19 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-dark flex flex-col">
         <div className="container mx-auto px-4 py-8 flex-grow flex flex-col">
           <h1 className="text-4xl md:text-6xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-meltin animate-gradient-shift">
-            MeltIn
+            Meltine
           </h1>
           <div className="flex-grow flex items-center justify-center">
             <LoginForm />
           </div>
         </div>
-        <footer className="text-center py-4 text-sm text-gray-500">
-          <p>© 2025 MeltIn Music</p>
+        <footer className="text-center py-4 text-sm text-gray-500 flex justify-between items-center container mx-auto px-4">
+          <div className="text-left">
+            <p>Developer By: KiriKaslana</p>
+          </div>
+          <div>
+            <p>© 2025 Meltine Music</p>
+          </div>
         </footer>
       </div>
     );
@@ -34,8 +39,13 @@ const Index = () => {
         <MusicPlayer />
       </main>
       <FeedbackButton />
-      <footer className="text-center py-4 text-sm text-gray-500">
-        <p>© 2025 MeltIn Music</p>
+      <footer className="text-center py-4 text-sm text-gray-500 flex justify-between items-center container mx-auto px-4">
+        <div className="text-left">
+          <p>Developer By: KiriKaslana</p>
+        </div>
+        <div>
+          <p>© 2025 Meltine Music</p>
+        </div>
       </footer>
     </div>
   );

@@ -52,7 +52,7 @@ export const Navbar = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-meltin animate-gradient-shift">
-            MeltIn
+            Meltine
           </h1>
         </Link>
 
@@ -95,7 +95,7 @@ export const Navbar = () => {
           <SheetContent side="right" className="glass-card w-[300px] border-none">
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-meltin">MeltIn</h2>
+                <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-meltin">Meltine</h2>
                 <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(false)}>
                   <X size={24} />
                 </Button>
