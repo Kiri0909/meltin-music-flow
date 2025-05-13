@@ -23,7 +23,7 @@ const Index = () => {
         </div>
         <footer className="text-center py-4 text-sm text-gray-500 flex justify-between items-center container mx-auto px-4">
           <div className="text-left">
-            <p>Developer By: KiriKaslana</p>
+            <p>Developed By: KiriKaslana</p>
           </div>
           <div>
             <p>© 2025 Meltine Music</p>
@@ -43,7 +43,7 @@ const Index = () => {
       <SilverwolfBot />
       <footer className="text-center py-4 text-sm text-gray-500 flex justify-between items-center container mx-auto px-4">
         <div className="text-left">
-          <p>Developer By: KiriKaslana</p>
+          <p>Developed By: KiriKaslana</p>
         </div>
         <div>
           <p>© 2025 Meltine Music</p>
